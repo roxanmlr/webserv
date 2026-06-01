@@ -1,6 +1,6 @@
 .vscode/
 *.o
-webserver
+webserv
 update-sources
 objs/
 *.d
