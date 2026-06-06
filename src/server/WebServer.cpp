@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:49:36 by lmilando          #+#    #+#             */
-/*   Updated: 2026/05/28 00:27:08 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/06 11:57:28 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,8 +19,7 @@ WebServer::WebServer() : listen_map() {
 }
 
 WebServer::~WebServer() {
-	for (std::map<int, WebServer::ListenConfig>::iterator it = listen_map.begin(); it != listen_map.end(); ++it)
-		close((*it).first);
+	stop();
 }
 
 WebServer::WebServer(WebServer const& other) {
@@ -87,92 +86,122 @@ void WebServer::init(const IConfig& config) {
 				close(fd);
 				throw WebServerError("listen");
 			}
+			Logger logger;
+			logger.log(Logger::INFO, "New Server");
 			listen_map[fd] = (struct ListenConfig){.fd = fd, .host = host, .port = port, .serv = (*it_server)};
 		}
 	}
 }
 
 void WebServer::run() {
-	struct epoll_event events[MAX_EVENTS];
-	std::signal(SIGPIPE, SIG_IGN);
-	int epoll_fd = epoll_create(1);
-	if (epoll_fd == -1)
-		throw WebServerError("epoll_create");
-	for (std::map<int, WebServer::ListenConfig>::iterator it = listen_map.begin(); it != listen_map.end(); ++it) {
-		struct epoll_event ev;
-		std::memset(&ev, 0, sizeof(ev));
-		ev.events  = EPOLLIN;
-		ev.data.fd = (*it).first;
-		if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, (*it).first, &ev) == -1) {
-			close(epoll_fd);
-			throw WebServerError("epoll_ctl server");
+	int epoll_fd = -1;
+	try {
+		struct epoll_event events[MAX_EVENTS];
+		std::signal(SIGPIPE, SIG_IGN);
+		epoll_fd = epoll_create(1);
+		if (epoll_fd == -1)
+			throw WebServerError("epoll_create");
+		for (std::map<int, WebServer::ListenConfig>::iterator it = listen_map.begin(); it != listen_map.end(); ++it) {
+			struct epoll_event ev;
+			std::memset(&ev, 0, sizeof(ev));
+			ev.events  = EPOLLIN;
+			ev.data.fd = (*it).first;
+			if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, (*it).first, &ev) == -1) {
+				close(epoll_fd);
+				throw WebServerError("epoll_ctl server");
+			}
 		}
-	}
-	for (;;) {
-		int n_events = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
-		if (n_events == -1) {
-			if (errno == EINTR)
-				continue;
-			throw WebServerError("epoll_wait");
-		}
-		for (int i = 0; i < n_events; ++i) {
-			int	 fd			  = events[i].data.fd;
-			bool is_server_fd = listen_map.count(fd) > 0;
-			if (is_server_fd) {
-				// Add a client
-				for (;;) {
-					int client_fd = accept(fd, NULL, NULL);
-					if (client_fd == -1) {
-						if (errno == EAGAIN || errno == EWOULDBLOCK)
-							break; // Plus de client à accepter fin de boucle
-						// Logger.error("accept failed")
-						break;
+		for (;;) {
+			int n_events = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
+			if (n_events == -1) {
+				if (errno == EINTR)
+					continue;
+				throw WebServerError("epoll_wait");
+			}
+			for (int i = 0; i < n_events; ++i) {
+				int	 fd	  = events[i].data.fd;
+				bool is_server_fd = listen_map.count(fd) > 0;
+				if (is_server_fd) {
+					int server_fd = fd;
+					// Add a client
+					for (;;) {
+						Logger logger;
+						int	   client_fd = accept(server_fd, NULL, NULL);
+						if (client_fd == -1) {
+							if (errno == EAGAIN || errno == EWOULDBLOCK)
+								break; // Plus de client à accepter fin de boucle
+							// Logger.error("accept failed")
+							break;
+						}
+						if (client_map.count(client_fd) > 0)
+							break;
+						if (set_nonblocking(client_fd) == -1) {
+							// Logger.error("fcntl failed")
+							close(client_fd);
+							continue;
+						}
+						struct epoll_event ev_client;
+						std::memset(&ev_client, 0, sizeof(ev_client));
+						ev_client.events  = EPOLLIN;
+						ev_client.data.fd = client_fd;
+						if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, client_fd, &ev_client) == -1) {
+							// Logger.error("epoll_ctl failed")
+							close(client_fd);
+							continue;
+						}
+						logger.log(Logger::INFO, "Client connected");
+						client_map[client_fd]	 = new Client(client_fd, listen_map[server_fd].serv);
+						std::string defaultWrite = "HTTP/1.1 200 OK\r\n"
+												   "Content-Type: text/plain\r\n"
+												   "Content-Length: 12\r\n"
+												   "Connection: close\r\n"
+												   "\r\n"
+												   "Hello World\n";
+						(client_map[client_fd])->setWriteBuffer(defaultWrite);
 					}
-					if (set_nonblocking(client_fd) == -1) {
-						// Logger.error("fcntl failed")
-						close(client_fd);
-						continue;
-					}
-					struct epoll_event ev_client;
-					std::memset(&ev_client, 0, sizeof(ev_client));
-					ev_client.events  = EPOLLIN;
-					ev_client.data.fd = client_fd;
-					if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, client_fd, &ev_client) == -1) {
-						// Logger.error("epoll_ctl failed")
-						close(client_fd);
-						continue;
-					}
-					// Logger.log("Client connected: fd  = " + std::to_string(client_fd));
-					client_map[client_fd] = new Client(fd, listen_map[fd].serv);
-				}
-			} else {
-				// Serve the client
-				IClient* client = client_map[fd];
-				if (events[i].events & EPOLLIN) {
-					client->onReadable();
-				}
-				if (events[i].events & EPOLLOUT) {
-					client->onWritable();
-				}
-
-				if (client->shouldClose()) {
-					listen_map.erase(fd);
 				} else {
-					struct epoll_event ev;
-					ev.data.fd = client->getFd();
-					ev.events  = 0;
-					if (client->wantsRead())
-						ev.events |= EPOLLIN;
-					if (client->wantsWrite())
-						ev.events |= EPOLLOUT;
-					epoll_ctl(epoll_fd, EPOLL_CTL_MOD, client->getFd(), &ev);
+					int client_fd = fd;
+					// Serve the client
+					IClient* client = client_map[client_fd];
+					if (events[i].events & EPOLLIN) {
+						client->onReadable();
+					}
+					if (events[i].events & EPOLLOUT) {
+						client->onWritable();
+					}
+
+					if (client->shouldClose()) {
+						close(client_fd);
+						delete client_map[client_fd];
+						client_map.erase(client_fd);
+					} else {
+						struct epoll_event ev;
+						ev.data.fd = client->getFd();
+						ev.events  = 0;
+						if (client->wantsRead())
+							ev.events |= EPOLLIN;
+						if (client->wantsWrite())
+							ev.events |= EPOLLOUT;
+						epoll_ctl(epoll_fd, EPOLL_CTL_MOD, client->getFd(), &ev);
+					}
 				}
 			}
 		}
+	} catch (...) {
+		if (epoll_fd != -1)
+			close(epoll_fd);
+		std::cerr << "server error" << std::endl;
 	}
 }
 
 void WebServer::stop() {
-	for (std::map<int, WebServer::ListenConfig>::iterator it = listen_map.begin(); it != listen_map.end(); ++it)
+	for (std::map<int, WebServer::ListenConfig>::iterator it = listen_map.begin(); it != listen_map.end(); ++it) {
 		close((*it).first);
+	}
+	for (std::map<int, IClient*>::iterator it = client_map.begin(); it != client_map.end(); ++it) {
+		close(it->first);
+		delete it->second;
+	}
+	listen_map.clear();
+	client_map.clear();
 }

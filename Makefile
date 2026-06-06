@@ -5,7 +5,7 @@ DEPFLAGS    = -MMD -MP
 CXXFLAGS	= -Wall -Wextra -Werror $(SAN) -g $(DEPFLAGS)
 # To update sources
 # make us
-SOURCES = src/main.cpp src/config/Config.cpp src/config/ConfigError.cpp src/config/ConfigParser.cpp src/config/IConfig.cpp src/config/LocationConfigBuilder.cpp src/config/LocationConfig.cpp src/config/ServerConfigBuilder.cpp src/config/ServerConfig.cpp src/config/Tokenizer.cpp src/server/Client.cpp src/server/WebServer.cpp src/server/WebServerError.cpp
+SOURCES = src/main.cpp src/config/Config.cpp src/config/ConfigError.cpp src/config/ConfigParser.cpp src/config/IConfig.cpp src/config/LocationConfigBuilder.cpp src/config/LocationConfig.cpp src/config/ServerConfigBuilder.cpp src/config/ServerConfig.cpp src/config/Tokenizer.cpp src/server/Client.cpp src/server/WebServer.cpp src/server/WebServerError.cpp src/utils/Logger.cpp
 OBJECTS = $(patsubst src/%.cpp, objs/%.o,$(SOURCES))
 
 all: update-sources $(NAME)

@@ -3,17 +3,17 @@
 /*                                                        :::      ::::::::   */
 /*   Config.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lmilando <lmilando@42.fr>                  +#+  +:+       +#+        */
+/*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:48:26 by lmilando          #+#    #+#             */
-/*   Updated: 2026/05/27 23:48:27 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/06 12:18:07 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Config.hpp"
 #include "ConfigParser.hpp"
 #include <sstream>
-Config::Config() : server_configs() {
+Config::Config() : server_configs(), is_correct(false) {
 }
 
 Config::~Config() {
@@ -39,6 +39,7 @@ Config& Config::operator=(Config const& other) {
 	for (std::vector<IServerConfig*>::const_iterator it = other.server_configs.begin(); it != other.server_configs.end(); ++it) {
 		server_configs.push_back((*it)->clone());
 	}
+	this->is_correct = other.is_correct;
 	return *this;
 }
 
@@ -60,11 +61,21 @@ const IServerConfig* Config::findServer(const std::string& host, unsigned int po
 std::istream& Config::read(std::istream& in) {
 	ConfigParser parser;
 	IConfig*	 result = parser.parse(in);
-	if (!result)
+	if (!result) {
+		is_correct = false;
 		return in;
+	}
+	is_correct								   = true;
 	const std::vector<IServerConfig*>& servers = result->getServers();
-	for (std::vector<IServerConfig*>::const_iterator it = servers.begin(); it != servers.end(); ++it)
-		this->addServer((*it)->clone());
+	for (std::vector<IServerConfig*>::const_iterator it = servers.begin(); it != servers.end(); ++it){
+		IServerConfig* clone = (*it)->clone();	
+		try{
+		this->addServer(clone);
+		}catch(...){
+			is_correct = false;
+			delete clone;
+		}
+	}
 	delete result;
 	return in;
 }
@@ -97,4 +108,8 @@ void Config::addServer(IServerConfig* server_config) {
 		}
 	}
 	server_configs.push_back(server_config);
+}
+
+bool Config::good() const {
+	return is_correct;
 }

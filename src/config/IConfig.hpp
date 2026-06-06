@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   IConfig.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lmilando <lmilando@42.fr>                  +#+  +:+       +#+        */
+/*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:46:52 by lmilando          #+#    #+#             */
-/*   Updated: 2026/05/27 23:46:54 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/05 22:57:00 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,6 +26,7 @@ public:
 	virtual const std::vector<IServerConfig*>& getServers() const											= 0;
 	virtual const IServerConfig*			   findServer(const std::string& host, unsigned int port) const = 0;
 	virtual void							   addServer(IServerConfig*)									= 0;
+	virtual bool							   good() const													= 0;
 	virtual std::istream&					   read(std::istream& in)										= 0;
 	virtual std::ostream&					   write(std::ostream& out) const								= 0;
 };

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   IWebServer.hpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lmilando <lmilando@42.fr>                  +#+  +:+       +#+        */
+/*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:49:32 by lmilando          #+#    #+#             */
-/*   Updated: 2026/05/27 23:49:33 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/05 23:15:54 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,7 @@
 #ifndef IWEB_SERVER_HPP
 #define IWEB_SERVER_HPP
 #include "../config/IConfig.hpp"
+#include "../utils/Logger.hpp"
 
 class IWebServer {
 public:

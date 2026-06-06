@@ -1,26 +1,28 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   ILogger.hpp                                        :+:      :+:    :+:   */
+/*   Logger.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lmilando <lmilando@42.fr>                  +#+  +:+       +#+        */
+/*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:48:48 by lmilando          #+#    #+#             */
-/*   Updated: 2026/05/27 23:48:48 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/05 23:09:44 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once
-#ifndef ILOGGER_HPP
-#define ILOGGER_HPP
+#ifndef LOGGER_HPP
+#define LOGGER_HPP
+#include <iostream>
 #include <string>
 
-class ILogger {
+class Logger {
 public:
 	enum Level { DEBUG, INFO, WARN, ERROR };
-
-	virtual ~ILogger() {
-	}
-	virtual void log(Level level, const std::string& msg) = 0;
+	Logger();
+	~Logger();
+	Logger(Logger const& other);
+	Logger& operator=(Logger const& other);
+	void	log(Level level, const std::string& msg);
 };
 #endif

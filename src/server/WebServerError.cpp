@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   WebServerError.cpp                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lmilando <lmilando@42.fr>                  +#+  +:+       +#+        */
+/*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/01 20:24:43 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/01 20:24:44 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/06 12:16:52 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,7 +24,7 @@ WebServerError::WebServerError(WebServerError const& other) : message(other.mess
 WebServerError& WebServerError::operator=(WebServerError const& other) {
 	if (this == &other)
 		return *this;
-	*this = other;
+	this->message = other.message;	
 	return *this;
 }
 
