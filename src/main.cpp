@@ -17,7 +17,6 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
-#include <unistd.h>
 
 int main(int argc, char* argv[]) {
 	if (argc > 2) {
@@ -39,8 +38,7 @@ int main(int argc, char* argv[]) {
 		std::cerr << "Incorrect configuration " << std::endl;
 		exit(EXIT_FAILURE);
 	}
-	std::cerr << "To shutdown the server properly:\n\tkill -s SIGTERM " << getpid() << std::endl;
-	IWebServer * webServer = new WebServer();
+	IWebServer* webServer = new WebServer();
 	try {
 		webServer->init(config);
 	} catch (WebServerError& e) {

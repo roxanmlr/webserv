@@ -227,7 +227,7 @@ void WebServer::run() {
 						break;
 					} else if (nread == -1 && errno != EAGAIN && errno != EWOULDBLOCK) {
 						std::cerr << "hi" << std::endl;
-						//throw WebServerError("recv");
+						// throw WebServerError("recv");
 					}
 				} else
 					serveClient(epoll_fd, events, i, fd);
