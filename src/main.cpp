@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:48:54 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/06 12:13:04 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/07 16:53:15 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,17 +17,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
-#include <signal.h>
 #include <unistd.h>
-
-static IWebServer* webServer;
-
-void			   shutdownServer(int s) {
-	  (void)s;
-	  if (!webServer)
-		  return;
-	  webServer->shouldClose();
-}
 
 int main(int argc, char* argv[]) {
 	if (argc > 2) {
@@ -50,8 +40,7 @@ int main(int argc, char* argv[]) {
 		exit(EXIT_FAILURE);
 	}
 	std::cerr << "To shutdown the server properly:\n\tkill -s SIGTERM " << getpid() << std::endl;
-	webServer = new WebServer();
-	signal(SIGTERM, shutdownServer);
+	IWebServer * webServer = new WebServer();
 	try {
 		webServer->init(config);
 	} catch (WebServerError& e) {

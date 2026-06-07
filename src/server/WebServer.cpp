@@ -33,7 +33,7 @@ WebServer& WebServer::operator=(WebServer const& other) {
 	return *this;
 }
 
-void	WebServer::shouldClose(){
+void WebServer::shouldClose() {
 	this->_shouldClose = true;
 }
 
@@ -43,8 +43,25 @@ int set_nonblocking(int fd) {
 		return -1;
 	return fcntl(fd, F_SETFL, flags | O_NONBLOCK);
 }
-
 void WebServer::init(const IConfig& config) {
+	{
+		struct sockaddr_un addr;
+		shutdown_fd = socket(AF_UNIX, SOCK_DGRAM, 0);
+		if (shutdown_fd == -1)
+			throw WebServerError("AF_UNIX socket");
+		memset(&addr, 0, sizeof(addr));
+		addr.sun_family = AF_UNIX;
+		strncpy(addr.sun_path, CLOSE_SOCKET_PATH, sizeof(addr.sun_path) - 1);
+		unlink(CLOSE_SOCKET_PATH);
+		if (bind(shutdown_fd, (struct sockaddr*)&addr, sizeof(struct sockaddr_un)) == -1) {
+			close(shutdown_fd);
+			throw WebServerError("bind AF_UNIX");
+		}
+		if (set_nonblocking(shutdown_fd) == -1) {
+			close(shutdown_fd);
+			throw WebServerError("fcntl");
+		}
+	}
 	const std::vector<IServerConfig*> servers = config.getServers();
 	for (std::vector<IServerConfig*>::const_iterator it_server = servers.begin(); it_server != servers.end(); ++it_server) {
 		for (std::vector<IServerConfig::ListenAddress>::const_iterator it_address = (*it_server)->getListenAddresses().begin();
@@ -176,6 +193,17 @@ void WebServer::run() {
 				throw WebServerError("epoll_ctl server");
 			}
 		}
+		{
+			struct epoll_event ev;
+			std::memset(&ev, 0, sizeof(ev));
+			ev.events  = EPOLLIN;
+			ev.data.fd = shutdown_fd;
+			if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, shutdown_fd, &ev)) {
+				close(epoll_fd);
+				throw WebServerError("epoll_ctl server/shutdown fd");
+			}
+		}
+		std::cerr << "Shutdown properly with : \n\t echo \"stop\" | nc -uU " << CLOSE_SOCKET_PATH << std::endl;
 		for (;;) {
 			int n_events = epoll_wait(epoll_fd, events, MAX_EVENTS, 100);
 			if (n_events == -1) {
@@ -190,11 +218,24 @@ void WebServer::run() {
 				bool is_server_fd = listen_map.count(fd) > 0;
 				if (is_server_fd)
 					addClient(epoll_fd, fd);
-				else
+				else if (fd == shutdown_fd) {
+					char	buffer[48];
+					ssize_t nread = recv(shutdown_fd, buffer, sizeof(buffer) - 1, 0);
+					if (nread >= 0) {
+						std::cerr << "Shutting down the server" << std::endl;
+						this->shouldClose();
+						break;
+					} else if (nread == -1 && errno != EAGAIN && errno != EWOULDBLOCK) {
+						std::cerr << "hi" << std::endl;
+						//throw WebServerError("recv");
+					}
+				} else
 					serveClient(epoll_fd, events, i, fd);
 			}
 		}
 		this->stop();
+		close(shutdown_fd);
+		unlink(CLOSE_SOCKET_PATH);
 		close(epoll_fd);
 	} catch (...) {
 		if (epoll_fd != -1)

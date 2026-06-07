@@ -24,9 +24,11 @@
 #include <map>
 #include <sys/epoll.h>
 #include <sys/socket.h>
+#include <sys/un.h>
 #include <unistd.h>
-#define MAX_EVENTS 2048
-#define BACKLOG	   128
+#define MAX_EVENTS		  2048
+#define BACKLOG			  128
+#define CLOSE_SOCKET_PATH "/tmp/close_webserver.sock"
 
 class WebServer : public IWebServer {
 private:
@@ -39,6 +41,7 @@ private:
 	std::map<int, struct ListenConfig> listen_map;
 	std::map<int, IClient*>			   client_map;
 	bool							   _shouldClose;
+	int								   shutdown_fd;
 	void							   addClient(int epoll_fd, int server_fd);
 	void							   serveClient(int epoll_fd, struct epoll_event events[MAX_EVENTS], int event_pos, int client_fd);
 
