@@ -38,6 +38,7 @@ private:
 	};
 	std::map<int, struct ListenConfig> listen_map;
 	std::map<int, IClient*>			   client_map;
+	bool							   _shouldClose;
 	void							   addClient(int epoll_fd, int server_fd);
 	void							   serveClient(int epoll_fd, struct epoll_event events[MAX_EVENTS], int event_pos, int client_fd);
 
@@ -49,5 +50,6 @@ public:
 	void	   init(const IConfig& config);
 	void	   run();
 	void	   stop();
+	void	   shouldClose();
 };
 #endif

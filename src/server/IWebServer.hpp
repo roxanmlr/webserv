@@ -23,5 +23,6 @@ public:
 	virtual void init(const IConfig& config) = 0;
 	virtual void run()						 = 0;
 	virtual void stop()						 = 0;
+	virtual void shouldClose()				 = 0;
 };
 #endif

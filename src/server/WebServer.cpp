@@ -12,8 +12,7 @@
 
 #include "WebServer.hpp"
 
-
-WebServer::WebServer() : listen_map() {
+WebServer::WebServer() : listen_map(), _shouldClose(false) {
 }
 
 WebServer::~WebServer() {
@@ -29,8 +28,13 @@ WebServer::WebServer(WebServer const& other) {
 WebServer& WebServer::operator=(WebServer const& other) {
 	if (this == &other)
 		return *this;
-	this->listen_map = other.listen_map;
+	this->listen_map   = other.listen_map;
+	this->_shouldClose = other._shouldClose;
 	return *this;
+}
+
+void	WebServer::shouldClose(){
+	this->_shouldClose = true;
 }
 
 int set_nonblocking(int fd) {
@@ -173,21 +177,25 @@ void WebServer::run() {
 			}
 		}
 		for (;;) {
-			int n_events = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
+			int n_events = epoll_wait(epoll_fd, events, MAX_EVENTS, 100);
 			if (n_events == -1) {
 				if (errno == EINTR)
 					continue;
 				throw WebServerError("epoll_wait");
 			}
+			if (_shouldClose)
+				break;
 			for (int i = 0; i < n_events; ++i) {
 				int	 fd			  = events[i].data.fd;
 				bool is_server_fd = listen_map.count(fd) > 0;
 				if (is_server_fd)
 					addClient(epoll_fd, fd);
-				 else 
+				else
 					serveClient(epoll_fd, events, i, fd);
 			}
 		}
+		this->stop();
+		close(epoll_fd);
 	} catch (...) {
 		if (epoll_fd != -1)
 			close(epoll_fd);

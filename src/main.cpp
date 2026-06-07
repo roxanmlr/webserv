@@ -17,6 +17,17 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <signal.h>
+#include <unistd.h>
+
+static IWebServer* webServer;
+
+void			   shutdownServer(int s) {
+	  (void)s;
+	  if (!webServer)
+		  return;
+	  webServer->shouldClose();
+}
 
 int main(int argc, char* argv[]) {
 	if (argc > 2) {
@@ -38,7 +49,9 @@ int main(int argc, char* argv[]) {
 		std::cerr << "Incorrect configuration " << std::endl;
 		exit(EXIT_FAILURE);
 	}
-	IWebServer* webServer = new WebServer();
+	std::cerr << "To shutdown the server properly:\n\tkill -s SIGTERM " << getpid() << std::endl;
+	webServer = new WebServer();
+	signal(SIGTERM, shutdownServer);
 	try {
 		webServer->init(config);
 	} catch (WebServerError& e) {
