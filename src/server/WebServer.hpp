@@ -25,6 +25,8 @@
 #include <sys/epoll.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#define MAX_EVENTS 2048
+#define BACKLOG	   128
 
 class WebServer : public IWebServer {
 private:
@@ -36,6 +38,8 @@ private:
 	};
 	std::map<int, struct ListenConfig> listen_map;
 	std::map<int, IClient*>			   client_map;
+	void							   addClient(int epoll_fd, int server_fd);
+	void							   serveClient(int epoll_fd, struct epoll_event events[MAX_EVENTS], int event_pos, int client_fd);
 
 public:
 	WebServer();
