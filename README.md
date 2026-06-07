@@ -139,10 +139,10 @@ Representes la configuration chargée. Donnes accès aux `IServerConfig` (un par
 
 ### Module Server
 #### `IWebServer`
-Reçoit un `IConfig` à l'initialisation. Crée les `IServerSocket` pour chaque paire `host:port` unique, puis entre dans la boucle `poll()` infinie via `run()`. Dispatche les événements vers les `IClient`, les `ICgiHandler` et les `IFastCgiClient` selon le type de fd.
+Reçoit un `IConfig` à l'initialisation. Crée les `ListenConfig` pour chaque paire `host:port` unique, puis entre dans la boucle `epoll_wait()` infinie via `run()`. Dispatche les événements vers les `IClient`, les `ICgiHandler` et les `IFastCgiClient` selon le type de fd.
 
-#### `IServerSocket`
-Wrappre un socket en état `LISTEN`. Expose `getFd()` pour l'enregistrement dans `poll()` et `acceptClient()` qui retourne le fd du client accepté en mode non-bloquant. Fournit aussi les `IServerConfig` associés pour que `IWebServer` sache quels blocs serveur s'appliquent sur ce port.
+#### `WebServer::ListenConfig`
+Structure interne de `WebServer` qui wrappre un socket en état `LISTEN`, le `host:port` associe ainsi que `IServerConfig` associés pour que `IWebServer` sache quels blocs serveur s'appliquent sur ce port.
 
 Setup : `socket()` → `setsockopt(SO_REUSEADDR)` → `fcntl(O_NONBLOCK)` → `bind()` → `listen()`.
 
