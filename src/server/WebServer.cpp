@@ -119,7 +119,7 @@ void WebServer::run() {
 				throw WebServerError("epoll_wait");
 			}
 			for (int i = 0; i < n_events; ++i) {
-				int	 fd	  = events[i].data.fd;
+				int	 fd			  = events[i].data.fd;
 				bool is_server_fd = listen_map.count(fd) > 0;
 				if (is_server_fd) {
 					int server_fd = fd;
@@ -160,7 +160,7 @@ void WebServer::run() {
 						(client_map[client_fd])->setWriteBuffer(defaultWrite);
 					}
 				} else {
-					int client_fd = fd;
+					int		 client_fd = fd;
 					// Serve the client
 					IClient* client = client_map[client_fd];
 					if (events[i].events & EPOLLIN) {

@@ -24,7 +24,7 @@ WebServerError::WebServerError(WebServerError const& other) : message(other.mess
 WebServerError& WebServerError::operator=(WebServerError const& other) {
 	if (this == &other)
 		return *this;
-	this->message = other.message;	
+	this->message = other.message;
 	return *this;
 }
 

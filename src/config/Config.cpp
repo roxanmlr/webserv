@@ -67,11 +67,11 @@ std::istream& Config::read(std::istream& in) {
 	}
 	is_correct								   = true;
 	const std::vector<IServerConfig*>& servers = result->getServers();
-	for (std::vector<IServerConfig*>::const_iterator it = servers.begin(); it != servers.end(); ++it){
-		IServerConfig* clone = (*it)->clone();	
-		try{
-		this->addServer(clone);
-		}catch(...){
+	for (std::vector<IServerConfig*>::const_iterator it = servers.begin(); it != servers.end(); ++it) {
+		IServerConfig* clone = (*it)->clone();
+		try {
+			this->addServer(clone);
+		} catch (...) {
 			is_correct = false;
 			delete clone;
 		}
