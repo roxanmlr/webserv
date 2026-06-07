@@ -7,6 +7,6 @@ for file in "$DIR"/* ; do
 	echo ;
 	./webserver $file;
 	echo ==== Leaks check ====
-	valgrind  --leak-check=full ./webserver $file 2>&1 | grep 'at exit'
+	valgrind  --leak-check=full ./webserv $file 2>&1 | grep 'at exit'
 	echo;
 done
