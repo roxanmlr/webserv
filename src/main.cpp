@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
 		std::cerr << "Incorrect configuration " << std::endl;
 		exit(EXIT_FAILURE);
 	}
-	IWebServer* webServer	 = new WebServer();
+	IWebServer* webServer = new WebServer();
 	try {
 		webServer->init(config);
 		webServer->run();

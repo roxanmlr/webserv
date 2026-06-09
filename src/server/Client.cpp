@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/01 20:23:45 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/09 17:37:04 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/09 17:41:20 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,34 +15,33 @@
 #include "../mock/http/HttpResponseMock.cpp"
 
 Client::Client()
-	: fd(-1), state(INIT), serv(NULL), lastActivity(time(NULL)), read_status(READ_OK), read_buffer(""), write_status(WRITE_NOT_START), write_pos(0), write_buffer("") {
+	: fd(-1), state(INIT), serv(NULL), lastActivity(time(NULL)), read_status(READ_OK), read_buffer(""), write_status(WRITE_NOT_START), write_pos(0),
+	  write_buffer("") {
 
 	std::map<std::string, std::string> headers;
-	this->request			 = new HttpRequestMock("GET", "www.google.com", headers, "body", 404);
-	std::string defaultWrite = "HTTP/1.1 200 OK\r\n"
-							   "Content-Type: text/plain\r\n"
-							   "Content-Length: 12\r\n"
-							   "Connection: close\r\n"
-							   "\r\n"
-							   "Hello World\n";
-	this->response			 = new HttpResponseMock(defaultWrite);
+	std::string						   defaultWrite = "HTTP/1.1 200 OK\r\n"
+													  "Content-Type: text/plain\r\n"
+													  "Content-Length: 12\r\n"
+													  "Connection: close\r\n"
+													  "\r\n"
+													  "Hello World\n";
+	this->response									= new HttpResponseMock(defaultWrite);
 }
 
 Client::Client(int fd, IServerConfig const* serv)
-	: fd(fd), state(INIT), serv(serv), lastActivity(time(NULL)), read_status(READ_OK), read_buffer(""), write_status(WRITE_NOT_START), write_pos(0), write_buffer("") {
+	: fd(fd), state(INIT), serv(serv), lastActivity(time(NULL)), read_status(READ_OK), read_buffer(""), write_status(WRITE_NOT_START), write_pos(0),
+	  write_buffer("") {
 	std::map<std::string, std::string> headers;
-	this->request			 = new HttpRequestMock("GET", "www.google.com", headers, "body", 404);
-	std::string defaultWrite = "HTTP/1.1 200 OK\r\n"
-							   "Content-Type: text/plain\r\n"
-							   "Content-Length: 12\r\n"
-							   "Connection: close\r\n"
-							   "\r\n"
-							   "Hello World\n";
-	this->response			 = new HttpResponseMock(defaultWrite);
+	std::string						   defaultWrite = "HTTP/1.1 200 OK\r\n"
+													  "Content-Type: text/plain\r\n"
+													  "Content-Length: 12\r\n"
+													  "Connection: close\r\n"
+													  "\r\n"
+													  "Hello World\n";
+	this->response									= new HttpResponseMock(defaultWrite);
 }
 
 Client::~Client() {
-	delete this->request;
 	delete this->response;
 }
 
@@ -92,8 +91,6 @@ void Client::onReadable() {
 		std::cerr << "n reads = " << n << std::endl;
 		if (n > 0) {
 			read_status = READ_OK;
-			if (this->request)
-				this->request->feed(tmp, n);
 			read_buffer.append(tmp, n);
 			std::string t;
 			t.append(tmp, n);
@@ -116,23 +113,18 @@ void Client::onReadable() {
 		std::cerr << "READ ERROR" << std::endl;
 		break;
 	}
-	if (!(read_buffer.empty()))
-	{
+	if (!(read_buffer.empty())) {
 		IHttpRequest::ParseState parse_state = this->_request.feed(read_buffer.data(), read_buffer.size());
 		read_buffer.clear();
-		if (parse_state == IHttpRequest::COMPLETE)
-		{
+		if (parse_state == IHttpRequest::COMPLETE) {
 			std::cerr << "HTTP request parsed with success" << std::endl;
 			read_buffer = this->_request.getBuffer();
 			this->state = PROCESSING;
-		}
-		else if (parse_state == IHttpRequest::PARSE_ERROR)
-		{
-			std::cerr << "HTTP request error 400(bad request)"<< std::endl;
+		} else if (parse_state == IHttpRequest::PARSE_ERROR) {
+			std::cerr << "HTTP request error 400(bad request)" << std::endl;
 			this->state = PROCESSING;
 		}
 	}
-
 }
 
 void Client::onWritable() {

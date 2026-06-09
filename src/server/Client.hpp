@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/01 20:23:52 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/09 17:38:03 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/09 17:40:41 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,13 +14,13 @@
 #ifndef CLIENT_HPP
 #define CLIENT_HPP
 #include "../config/IServerConfig.hpp"
+#include "../http/HttpRequest.hpp"
 #include "../http/IHttpRequest.hpp"
 #include "../http/IHttpResponse.hpp"
 #include "IClient.hpp"
 #include <ctime>
 #include <errno.h>
 #include <sys/socket.h>
-#include "../http/HttpRequest.hpp"
 
 class Client : public IClient {
 private:
@@ -41,10 +41,9 @@ private:
 	enum WriteStatus write_status;
 	std::size_t		 write_pos;
 	std::string		 write_buffer;
-	IHttpRequest*	 request;
 	IHttpResponse*	 response;
 
-	HttpRequest _request;
+	HttpRequest		 _request;
 
 public:
 	Client();
