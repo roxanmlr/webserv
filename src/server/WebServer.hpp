@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:49:18 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/05 23:15:59 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/09 15:28:45 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,8 +26,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
-#define MAX_EVENTS		  2048
-#define BACKLOG			  128
+#define MAX_EVENTS		  8096
 #define CLOSE_SOCKET_PATH "/tmp/close_webserver.sock"
 
 class WebServer : public IWebServer {

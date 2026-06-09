@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:49:36 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/08 22:16:54 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/09 15:28:28 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -101,7 +101,7 @@ void WebServer::init(const IConfig& config) {
 				// throw WebServerError("bind sur port " + std::to_string(port));
 				throw WebServerError("bind");
 			}
-			if (listen(fd, BACKLOG) == -1) {
+			if (listen(fd, SOMAXCONN) == -1) {
 				close(fd);
 				throw WebServerError("listen");
 			}
