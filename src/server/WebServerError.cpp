@@ -6,16 +6,16 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/01 20:24:43 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/06 12:16:52 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/08 22:28:33 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "WebServerError.hpp"
 
-WebServerError::WebServerError() : message("") {
+WebServerError::WebServerError() : message("WebServer Error : ") {
 }
 
-WebServerError::WebServerError(const std::string& message) : message(message) {
+WebServerError::WebServerError(const std::string& message) : message("WebServer Error : " + message) {
 }
 
 WebServerError::WebServerError(WebServerError const& other) : message(other.message) {
