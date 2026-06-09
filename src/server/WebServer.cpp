@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:49:36 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/06 11:57:28 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/09 15:28:28 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -101,7 +101,7 @@ void WebServer::init(const IConfig& config) {
 				// throw WebServerError("bind sur port " + std::to_string(port));
 				throw WebServerError("bind");
 			}
-			if (listen(fd, BACKLOG) == -1) {
+			if (listen(fd, SOMAXCONN) == -1) {
 				close(fd);
 				throw WebServerError("listen");
 			}
@@ -139,14 +139,7 @@ void WebServer::addClient(int epoll_fd, int server_fd) {
 			continue;
 		}
 		logger.log(Logger::INFO, "Client connected");
-		client_map[client_fd]	 = new Client(client_fd, listen_map[server_fd].serv);
-		std::string defaultWrite = "HTTP/1.1 200 OK\r\n"
-								   "Content-Type: text/plain\r\n"
-								   "Content-Length: 12\r\n"
-								   "Connection: close\r\n"
-								   "\r\n"
-								   "Hello World\n";
-		(client_map[client_fd])->setWriteBuffer(defaultWrite);
+		client_map[client_fd] = new Client(client_fd, listen_map[server_fd].serv);
 	}
 }
 
