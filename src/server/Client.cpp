@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mzouhir <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/01 20:23:45 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/06 11:52:57 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/09 17:11:00 by mzouhir          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -91,6 +91,23 @@ void Client::onReadable() {
 		std::cerr << "READ ERROR" << std::endl;
 		break;
 	}
+	if (!(read_buffer.empty()))
+	{
+		IHttpRequest::ParseState parse_state = this->_request.feed(read_buffer.data(), read_buffer.size());
+		read_buffer.clear();
+		if (parse_state == IHttpRequest::COMPLETE)
+		{
+			std::cerr << "HTTP request parsed with success" << std::endl;
+			read_buffer = this->_request.getBuffer();
+			this->state = PROCESSING;
+		}
+		else if (parse_state == IHttpRequest::PARSE_ERROR)
+		{
+			std::cerr << "HTTP request error 400(bad request)"<< std::endl;
+			this->state = PROCESSING;
+		}
+	}
+
 }
 
 void Client::onWritable() {

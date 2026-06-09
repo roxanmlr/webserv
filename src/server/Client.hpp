@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mzouhir <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/01 20:23:52 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/06 11:52:47 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/09 17:01:39 by mzouhir          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@
 #include <ctime>
 #include <errno.h>
 #include <sys/socket.h>
+#include "../http/HttpRequest.hpp"
 
 class Client : public IClient {
 private:
@@ -37,6 +38,8 @@ private:
 	enum WriteStatus write_status;
 	std::size_t		 write_pos;
 	std::string		 write_buffer;
+
+	HttpRequest _request;
 
 public:
 	Client();
