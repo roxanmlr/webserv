@@ -1,0 +1,14 @@
+services:
+  browser-test:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: browser-test
+    ports:
+      - "6080:6080"
+    cap_add:
+      - NET_ADMIN
+    security_opt:
+      - seccomp:unconfined
+    extra_hosts:
+      fake.test: 211.15.23.17

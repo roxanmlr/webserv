@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:48:54 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/07 16:53:15 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/08 22:38:25 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,14 +38,12 @@ int main(int argc, char* argv[]) {
 		std::cerr << "Incorrect configuration " << std::endl;
 		exit(EXIT_FAILURE);
 	}
-	IWebServer* webServer = new WebServer();
+	IWebServer* webServer	 = new WebServer();
 	try {
 		webServer->init(config);
-	} catch (WebServerError& e) {
+		webServer->run();
+	} catch (const WebServerError& e) {
 		std::cerr << "Failed to launch config with error :" << e.what() << std::endl;
-		delete webServer;
-		exit(EXIT_FAILURE);
 	}
-	webServer->run();
 	delete webServer;
 }
