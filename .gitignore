@@ -4,3 +4,4 @@ webserv
 update-sources
 objs/
 *.d
+config/default.conf
