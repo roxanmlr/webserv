@@ -14,18 +14,14 @@
 
 #include "IRequestHandler.hpp"
 
-class StaticFileHandler : public IRequestHandler
-{
-	private:
+class StaticFileHandler : public IRequestHandler {
+private:
+public:
+	virtual ~StaticFileHandler();
+	StaticFileHandler();
+	StaticFileHandler(const StaticFileHandler& base);
+	StaticFileHandler& operator=(const StaticFileHandler& base);
 
-	public:
-
-		virtual ~StaticFileHandler();
-		StaticFileHandler();
-		StaticFileHandler(const StaticFileHandler & base);
-		StaticFileHandler &operator=(const StaticFileHandler & base);
-
-		virtual bool canHandle(const IHttpRequest& req, const ILocationConfig & loc);
-		virtual bool handle(const IHttpRequest& req, const ILocationConfig & loc, IHttpResponse & res);
-
+	virtual bool	   canHandle(const IHttpRequest& req, const ILocationConfig& loc);
+	virtual bool	   handle(const IHttpRequest& req, const ILocationConfig& loc, IHttpResponse& res, IServerConfig const* serv);
 };

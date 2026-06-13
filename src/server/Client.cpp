@@ -19,30 +19,15 @@ Client::Client()
 	  write_buffer("") {
 
 	std::map<std::string, std::string> headers;
-	std::string						   defaultWrite = "HTTP/1.1 200 OK\r\n"
-													  "Content-Type: text/plain\r\n"
-													  "Content-Length: 12\r\n"
-													  "Connection: close\r\n"
-													  "\r\n"
-													  "Hello World\n";
-	this->response									= new HttpResponseMock(defaultWrite);
 }
 
 Client::Client(int fd, IServerConfig const* serv)
 	: fd(fd), state(INIT), serv(serv), lastActivity(time(NULL)), read_status(READ_OK), read_buffer(""), write_status(WRITE_NOT_START), write_pos(0),
 	  write_buffer("") {
 	std::map<std::string, std::string> headers;
-	std::string						   defaultWrite = "HTTP/1.1 200 OK\r\n"
-													  "Content-Type: text/plain\r\n"
-													  "Content-Length: 12\r\n"
-													  "Connection: close\r\n"
-													  "\r\n"
-													  "Hello World\n";
-	this->response									= new HttpResponseMock(defaultWrite);
 }
 
 Client::~Client() {
-	delete this->response;
 }
 
 Client::Client(Client const& other)
@@ -124,15 +109,38 @@ void Client::onReadable() {
 			std::cerr << "HTTP request error 400(bad request)" << std::endl;
 			this->state = PROCESSING;
 		}
+		this->write_status = WRITE_READY;
 	}
 }
 
 void Client::onWritable() {
-	if (write_pos == 0 && write_status == WRITE_NOT_START) {
-		if (this->response)
-			write_buffer = this->response->serialize();
-		else
-			std::cerr << "Response NULL" << std::endl;
+	if (write_status == WRITE_NOT_START)
+		return;
+	while (write_pos == 0 && write_status == WRITE_READY) {
+		StaticFileHandler staticFileHandler;
+		if (!serv) {
+			response.setStatus(500);
+			response.setBody("<h1>500 Internal Server error</h1>");
+			break;
+		}
+		Optional<ILocationConfig const*> optLoc = serv->matchLocation(_request.getUri());
+		if (optLoc.empty()) {
+			response.setStatus(404);
+			response.setBody("<h1>404 Not Found</h1>");
+			break;
+		}
+		ILocationConfig const* bestMatch = optLoc.get();
+		if (staticFileHandler.canHandle(_request, *bestMatch)) {
+			if (!bestMatch->isMethodAllowed(_request.getMethod())) {
+				response.setStatus(405);
+				response.setBody("<h1>405 Method Not Allowed</h1>");
+				break;
+			}
+
+			staticFileHandler.handle(_request, *bestMatch, response, serv);
+			write_buffer = response.serialize();
+		}
+		break;
 	}
 	lastActivity = time(NULL);
 	std::cerr << "on Writable" << std::endl;
@@ -182,6 +190,7 @@ bool Client::wantsRead() const {
 
 bool Client::wantsWrite() const {
 	switch (write_status) {
+	case WRITE_READY:
 	case WRITE_NOT_START:
 		return true;
 	case WRITE_OK:

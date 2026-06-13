@@ -14,9 +14,10 @@
 #ifndef CLIENT_HPP
 #define CLIENT_HPP
 #include "../config/IServerConfig.hpp"
+#include "../handler/StaticFileHandler.hpp"
 #include "../http/HttpRequest.hpp"
+#include "../http/HttpResponse.hpp"
 #include "../http/IHttpRequest.hpp"
-#include "../http/IHttpResponse.hpp"
 #include "IClient.hpp"
 #include <ctime>
 #include <errno.h>
@@ -33,6 +34,7 @@ private:
 	std::string		read_buffer;
 	enum WriteStatus {
 		WRITE_NOT_START,
+		WRITE_READY,
 		WRITE_OK,
 		WRITE_AGAIN,
 		WRITE_DONE,
@@ -41,7 +43,7 @@ private:
 	enum WriteStatus write_status;
 	std::size_t		 write_pos;
 	std::string		 write_buffer;
-	IHttpResponse*	 response;
+	HttpResponse	 response;
 
 	HttpRequest		 _request;
 

@@ -14,22 +14,23 @@
 #include <fstream>
 #include <sstream>
 
-StaticFileHandler::StaticFileHandler()
-{}
+StaticFileHandler::StaticFileHandler() {
+}
 
-StaticFileHandler::~StaticFileHandler()
-{}
+StaticFileHandler::~StaticFileHandler() {
+}
 
-StaticFileHandler::StaticFileHandler(const StaticFileHandler & base)
-{}
+StaticFileHandler::StaticFileHandler(const StaticFileHandler& base) {
+	(void)base;
+}
 
-StaticFileHandler &StaticFileHandler::operator=(const StaticFileHandler & base)
-{
+StaticFileHandler& StaticFileHandler::operator=(const StaticFileHandler& base) {
+	(void)base;
 	return (*this);
 }
 
-bool StaticFileHandler::canHandle(const IHttpRequest & req, const ILocationConfig & loc)
-{
+bool StaticFileHandler::canHandle(const IHttpRequest& req, const ILocationConfig& loc) {
+	(void)loc;
 	if (req.getMethod() != "GET")
 		return (false);
 	std::string uri = req.getUri();
@@ -40,35 +41,45 @@ bool StaticFileHandler::canHandle(const IHttpRequest & req, const ILocationConfi
 	return (true);
 }
 
-bool StaticFileHandler::handle(const IHttpRequest & req, const ILocationConfig &loc, IHttpResponse & res)
-{
-	std::string rootPath = "";
+bool StaticFileHandler::handle(const IHttpRequest& req, const ILocationConfig& loc, IHttpResponse& res, IServerConfig const* serv) {
+	std::string rootPath("");
+	if (!serv->getRootDir().empty())
+		rootPath = serv->getRootDir().get();
 	if (!loc.getRoot().empty())
 		rootPath = loc.getRoot().get();
 	std::string path = rootPath + req.getUri();
-	//check for the index path if its a directory from the vector in the config file
-	if (!path.empty() && path[path.length() - 1] == '/')
-	{
-		const std::vector<std::string> & index = loc.getIndexFiles();
-		bool indexFound = false;
-		for (std::vector<std::string>::const_iterator it = index.begin() ; it != index.end() ; ++it)
-		{
-			std::string testPath = path + *it;
+	// check for the index path if its a directory from the vector in the config file
+	if (!path.empty() && path[path.length() - 1] == '/') {
+		const std::vector<std::string>& index	   = loc.getIndexFiles();
+		bool							indexFound = false;
+		for (std::vector<std::string>::const_iterator it = index.begin(); it != index.end(); ++it) {
+			std::string	  testPath = path + *it;
 			std::ifstream testOpen(testPath.c_str());
-			if (testOpen.good())
-			{
-				path = testPath;
+			if (testOpen.good()) {
+				path	   = testPath;
 				indexFound = true;
 				break;
 			}
 		}
+		if (!indexFound) {
+			const std::vector<std::string>& index = serv->getIndexes();
+			for (std::vector<std::string>::const_iterator it = index.begin(); it != index.end(); ++it) {
+				std::string	  testPath = path + *it;
+				std::ifstream testOpen(testPath.c_str());
+				if (testOpen.good()) {
+					path	   = testPath;
+					indexFound = true;
+					break;
+				}
+			}
+		}
+		// TODO
 		if (indexFound == false && !index.empty())
 			path = path + index[0];
 	}
-	//now we have to construct de response by opening the file found
+	// now we have to construct de response by opening the file found
 	std::ifstream file(path.c_str());
-	if (!(file.is_open()))
-	{
+	if (!(file.is_open())) {
 		res.setStatus(404);
 		res.setBody("<h1>404 Not Found</h1>");
 		return (true);
