@@ -57,6 +57,9 @@ const std::string& HttpRequest::getHeader(const std::string& name) const {
 	return (it->second);
 }
 
+const std::map<std::string, std::string>& HttpRequest::getAllHeaders() const {
+	return _header;
+}
 const std::string& HttpRequest::getBody(void) const {
 	return (this->_body);
 }

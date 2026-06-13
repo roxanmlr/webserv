@@ -101,10 +101,10 @@ ServerConfigBuilder& ServerConfigBuilder::setClientMaxBodySize(std::size_t maxsi
 }
 
 IServerConfig* ServerConfigBuilder::build() {
-	if (root_dir.empty()){
+	if (root_dir.empty()) {
 		throw ConfigError("No root directory provided");
 	}
-	if (location_configs.empty()){
+	if (location_configs.empty()) {
 		LocationConfigBuilder lcfgBuilder;
 		lcfgBuilder.setPath("/");
 		lcfgBuilder.addAllowedMethod(ILocationConfig::GET);

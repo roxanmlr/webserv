@@ -34,13 +34,14 @@ public:
 	HttpRequest(void);
 	virtual ~HttpRequest(void);
 	HttpRequest(const HttpRequest& base);
-	HttpRequest&			   operator=(const HttpRequest& base);
+	HttpRequest&									  operator=(const HttpRequest& base);
 
-	virtual ParseState		   feed(const char* data, std::size_t len);
-	virtual const std::string& getMethod(void) const;
-	virtual const std::string& getUri(void) const;
-	virtual const std::string& getHeader(const std::string& name) const;
-	virtual const std::string& getBody(void) const;
-	virtual int				   getErrorCode(void) const;
-	const std::string&		   getBuffer(void) const;
+	virtual ParseState								  feed(const char* data, std::size_t len);
+	virtual const std::string&						  getMethod(void) const;
+	virtual const std::string&						  getUri(void) const;
+	virtual const std::string&						  getHeader(const std::string& name) const;
+	virtual const std::map<std::string, std::string>& getAllHeaders() const;
+	virtual const std::string&						  getBody(void) const;
+	virtual int										  getErrorCode(void) const;
+	const std::string&								  getBuffer(void) const;
 };
