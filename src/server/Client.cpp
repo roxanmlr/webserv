@@ -130,7 +130,7 @@ void Client::onWritable() {
 			break;
 		}
 		ILocationConfig const* bestMatch = optLoc.get();
-		if (staticFileHandler.canHandle(_request, *bestMatch)) {
+		if (staticFileHandler.canHandle(_request, *bestMatch, serv)) {
 			if (!bestMatch->isMethodAllowed(_request.getMethod())) {
 				response.setStatus(405);
 				response.setBody("<h1>405 Method Not Allowed</h1>");

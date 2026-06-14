@@ -21,7 +21,7 @@ class IRequestHandler {
 public:
 	virtual ~IRequestHandler() {
 	}
-	virtual bool canHandle(const IHttpRequest&, const ILocationConfig& loc)												= 0;
+	virtual bool canHandle(const IHttpRequest& req, const ILocationConfig& loc, IServerConfig const* serv)				= 0;
 	virtual bool handle(const IHttpRequest&, const ILocationConfig& loc, IHttpResponse& res, IServerConfig const* serv) = 0;
 };
 #endif
