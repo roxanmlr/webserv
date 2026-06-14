@@ -1,7 +1,9 @@
 #pragma once
 #include "../config/Config.hpp"
 #include "../server/WebServerError.hpp"
+#include "../utils/utils.hpp"
 #include "IRequestHandler.hpp"
+#include <cstdlib>
 #include <sys/wait.h>
 #include <unistd.h>
 
