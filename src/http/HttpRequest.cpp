@@ -6,7 +6,7 @@
 /*   By: mzouhir <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/08 18:04:17 by mzouhir           #+#    #+#             */
-/*   Updated: 2026/06/09 16:01:36 by mzouhir          ###   ########.fr       */
+/*   Updated: 2026/06/17 16:33:59 by mzouhir          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,8 +47,14 @@ const std::string& HttpRequest::getUri(void) const {
 }
 
 const std::string& HttpRequest::getHeader(const std::string& name) const {
+
+	std::string lowername = name;
+	for(size_t i = 0; i < lowername.length(); i++)
+	{
+		lowername[i] = std::tolower(lowername[i]);
+	}
 	std::map<std::string, std::string>::const_iterator it;
-	it = this->_header.find(name);
+	it = this->_header.find(lowername);
 
 	if (it == this->_header.end()) {
 		static const std::string empty;
@@ -109,7 +115,10 @@ bool HttpRequest::parseHeaderLine(const std::string& line) {
 		value = value.substr(first, last - first + 1);
 	else
 		value = "";
-	if (key == "Content-Length") {
+	for (size_t i = 0; i < key.length(); i++){
+		key[i] = std::tolower(key[i]);
+	}
+	if (key == "content-length") {
 		if (!(value.empty()) && value[0] == '-')
 			return (false);
 		std::stringstream ss(value);
