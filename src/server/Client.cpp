@@ -6,7 +6,7 @@
 /*   By: mzouhir <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/01 20:23:45 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/17 15:02:03 by mzouhir          ###   ########.fr       */
+/*   Updated: 2026/06/17 15:41:43 by mzouhir          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -66,7 +66,7 @@ time_t Client::getLastActivity() const {
 void Client::onReadable() {
 	lastActivity = time(NULL);
 	char tmp[4096];
-	while (read_status != READ_ERROR) {
+	while (1) {
 		if ((serv && !serv->getClientMaxBodySize().empty() && read_buffer.size() >= serv->getClientMaxBodySize().get()) || read_buffer.size() >= (1 << 18)) {
 			read_buffer.clear();
 			read_status = READ_OVERFLOW;
@@ -83,16 +83,16 @@ void Client::onReadable() {
 			std::cerr << "READ OK : " << t << std::endl;
 			continue;
 		}
-		if (n == 0 || read_status == READ_OK) {
+		if (n == 0) {
 			read_status = READ_CLOSED;
-			std::cerr << "READ CLOSED" << std::endl;
+			std::cerr << "READ CLOSED (EOF)" << std::endl;
 			break;
 		}
 		if (errno == EINTR)
 			continue;
 		if (errno == EAGAIN || errno == EWOULDBLOCK) {
 			read_status = READ_AGAIN;
-			std::cerr << "READ AGAIN" << std::endl;
+			std::cerr << "READ AGAIN (EAGAIN)" << std::endl;
 			break;
 		}
 		read_status = READ_ERROR;
@@ -106,11 +106,15 @@ void Client::onReadable() {
 			std::cerr << "HTTP request parsed with success" << std::endl;
 			read_buffer = this->_request.getBuffer();
 			this->state = PROCESSING;
+			this->write_status = WRITE_READY;
 		} else if (parse_state == IHttpRequest::PARSE_ERROR) {
 			std::cerr << "HTTP request error 400(bad request)" << std::endl;
 			this->state = PROCESSING;
+			this->write_status = WRITE_READY;
 		}
-		this->write_status = WRITE_READY;
+		else
+			std::cerr << "HTTP request incomplete, waiting for more data"<< std::endl;
+		//this->write_status = WRITE_READY;
 	}
 }
 
@@ -152,6 +156,12 @@ void Client::onWritable() {
 			}
 
 			staticFileHandler.handle(_request, *bestMatch, response, serv);
+			write_buffer = response.serialize();
+		}
+		else
+		{
+			response.setStatus(405);
+			response.setBody("<h1>405 Method not allowed (No handler found)</h1>");
 			write_buffer = response.serialize();
 		}
 		break;
@@ -205,8 +215,9 @@ bool Client::wantsRead() const {
 bool Client::wantsWrite() const {
 	switch (write_status) {
 	case WRITE_READY:
-	case WRITE_NOT_START:
 		return true;
+	case WRITE_NOT_START:
+		return false;
 	case WRITE_OK:
 	case WRITE_AGAIN:
 		return write_pos < write_buffer.size();

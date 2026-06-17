@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   WebServer.cpp                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mzouhir <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:49:36 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/09 15:28:28 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/17 15:41:20 by mzouhir          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -158,6 +158,7 @@ void WebServer::serveClient(int epoll_fd, struct epoll_event events[MAX_EVENTS],
 		client_map.erase(client_fd);
 	} else {
 		struct epoll_event ev;
+		std::memset(&ev, 0, sizeof(ev));
 		ev.data.fd = client->getFd();
 		ev.events  = 0;
 		if (client->wantsRead())
