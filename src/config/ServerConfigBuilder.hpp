@@ -13,8 +13,8 @@
 #pragma once
 #ifndef ISERVER_CONFIG_BUILDER_HPP
 #define ISERVER_CONFIG_BUILDER_HPP
-#include "ServerConfig.hpp"
 #include "LocationConfigBuilder.hpp"
+#include "ServerConfig.hpp"
 #include <string>
 #include <vector>
 
