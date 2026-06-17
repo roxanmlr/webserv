@@ -11,9 +11,14 @@
 /* ************************************************************************** */
 
 #include "CgiHandler.hpp"
+#include <cerrno>
+#include <csignal>
+#include <cstdio>
 #include <cstring>
-#include <fstream>
+#include <ctime>
 #include <sstream>
+
+const int CgiHandler::TIMEOUT_SEC = 30;
 
 CgiHandler::CgiHandler() {
 }
@@ -107,8 +112,9 @@ bool CgiHandler::canHandle(const IHttpRequest& req, const ILocationConfig& loc, 
 	return false;
 }
 
-std::string header_tocgi(std::string header) {
-	std::string out("");
+static std::string header_tocgi(const std::string& header) {
+	std::string out;
+	out.reserve(header.size());
 	for (std::string::const_iterator it = header.begin(); it != header.end(); ++it) {
 		if ('a' <= *it && *it <= 'z')
 			out.push_back(*it - 'a' + 'A');
@@ -120,69 +126,126 @@ std::string header_tocgi(std::string header) {
 	return out;
 }
 
-bool is_cgi_metavariable(std::string val) {
-	if (val == "AUTH_TYPE")
-		return true;
-	if (val == "CONTENT_LENGTH")
-		return true;
-	if (val == "CONTENT_TYPE")
-		return true;
-	if (val == "PATH_INFO")
-		return true;
-	if (val == "PATH_TRANSLATED")
-		return true;
-	if (val == "QUERY_STRING")
-		return true;
-	if (val == "REMOTE_HOST")
-		return true;
-	if (val == "REMOTE_IDENT")
-		return true;
-	if (val == "REMOTE_USER")
-		return true;
-	if (val == "REQUEST_METHOD")
-		return true;
-	if (val == "SCRIPT_NAME")
-		return true;
-	if (val == "SERVER_PROTOCOL")
-		return true;
-	return false;
+static void parse_cgi_response(const std::string& output, IHttpResponse& res) {
+	std::size_t sep_pos  = output.find("\r\n\r\n"); // Find 2 blank lines with carriage \r
+	std::size_t sep_len  = 4;
+	if (sep_pos == std::string::npos) {
+		sep_pos = output.find("\n\n"); //Find 2 blank lines without carriage
+		sep_len = 2;
+	}
+	std::string body;
+	std::string header_section;
+	if (sep_pos == std::string::npos) {
+		body = output;
+	} else {
+		header_section = output.substr(0, sep_pos);
+		body           = output.substr(sep_pos + sep_len);
+	}
+
+	int status = 200;
+
+	// Parse CGI headers line by line
+	std::istringstream ss(header_section);
+	std::string        line;
+	while (std::getline(ss, line)) {
+		if (!line.empty() && line[line.size() - 1] == '\r')
+			line.erase(line.size() - 1);
+		if (line.empty())
+			continue;
+		std::size_t colon = line.find(':');
+		if (colon == std::string::npos)
+			continue;
+		std::string name  = line.substr(0, colon);
+		std::string value = line.substr(colon + 1);
+		std::size_t first = value.find_first_not_of(" \t");
+		value             = (first != std::string::npos) ? value.substr(first) : "";
+
+		if (name == "Status") {
+			// "Status: 404 Not Found" → extract the numeric code
+			std::istringstream code_ss(value);
+			code_ss >> status;
+		} else {
+			res.setHeader(name, value);
+		}
+	}
+
+	res.setStatus(status);
+	res.setHeader("Content-Length", ft_itoa(body.size()));
+	res.setBody(body);
 }
-bool is_cgi_request_metavariable(std::string val) {
-	if (val == "AUTH_TYPE")
-		return true;
-	if (val == "CONTENT_LENGTH")
-		return true;
-	if (val == "CONTENT_TYPE")
-		return true;
-	if (val == "GATEWAY_INTERFACE")
-		return true;
-	if (val == "PATH_INFO")
-		return true;
-	if (val == "PATH_TRANSLATED")
-		return true;
-	if (val == "QUERY_STRING")
-		return true;
-	if (val == "REMOTE_ADDR")
-		return true;
-	if (val == "REMOTE_HOST")
-		return true;
-	if (val == "REMOTE_IDENT")
-		return true;
-	if (val == "REMOTE_USER")
-		return true;
-	if (val == "REQUEST_METHOD")
-		return true;
-	if (val == "SCRIPT_NAME")
-		return true;
-	if (val == "SERVER_NAME")
-		return true;
-	if (val == "SERVER_PORT")
-		return true;
-	if (val == "SERVER_PROTOCOL")
-		return true;
-	if (val == "SERVER_SOFTWARE")
-		return true;
-	return false;
+
+static void free_envp(char** envp) {
+	for (int i = 0; envp[i]; ++i)
+		std::free(envp[i]);
+	std::free(envp);
+}
+
+static char** build_cgi_env(const IHttpRequest& req, IServerConfig const* serv, const std::string& script_name) {
+	std::vector<std::string> envvec;
+
+	// Extract query string from URI (raw, not decoded)
+	const std::string& raw_uri = req.getUri();
+	std::string        query_string;
+	std::size_t        q_pos = raw_uri.find('?');
+	if (q_pos != std::string::npos)
+		query_string = raw_uri.substr(q_pos + 1);
+
+	// SERVER_NAME and SERVER_PORT: prefer Host header, fall back to config
+	std::string host        = req.getHeader("Host");
+	std::string server_name = host;
+	std::string server_port;
+	std::size_t colon = host.find(':');
+	if (colon != std::string::npos) {
+		server_name = host.substr(0, colon);
+		server_port = host.substr(colon + 1);
+	}
+	if (server_name.empty() && !serv->getServerNames().empty())
+		server_name = serv->getServerNames()[0];
+	if (server_port.empty() && !serv->getListenAddresses().empty()) {
+		std::ostringstream ss;
+		ss << serv->getListenAddresses()[0].port;
+		server_port = ss.str();
+	}
+
+	// All required CGI/1.1 metavariables (RFC 3875 §4.1)
+	envvec.push_back("AUTH_TYPE=");
+	envvec.push_back("CONTENT_LENGTH=" + req.getHeader("Content-Length"));
+	envvec.push_back("CONTENT_TYPE=" + req.getHeader("Content-Type"));
+	envvec.push_back("GATEWAY_INTERFACE=CGI/1.1");
+	envvec.push_back("PATH_INFO=");
+	envvec.push_back("PATH_TRANSLATED=");
+	envvec.push_back("QUERY_STRING=" + query_string);
+	envvec.push_back("REMOTE_ADDR=");
+	envvec.push_back("REMOTE_HOST=");
+	envvec.push_back("REQUEST_METHOD=" + req.getMethod());
+	envvec.push_back("SCRIPT_NAME=" + script_name);
+	envvec.push_back("SERVER_NAME=" + server_name);
+	envvec.push_back("SERVER_PORT=" + server_port);
+	envvec.push_back("SERVER_PROTOCOL=HTTP/1.1");
+	envvec.push_back("SERVER_SOFTWARE=webserv");
+
+	// Protocol-specific HTTP headers as HTTP_* (skip CONTENT_TYPE and CONTENT_LENGTH)
+	for (std::map<std::string, std::string>::const_iterator it = req.getAllHeaders().begin(); it != req.getAllHeaders().end(); ++it) {
+		std::string cgi_name = header_tocgi(it->first);
+		if (cgi_name == "CONTENT_TYPE" || cgi_name == "CONTENT_LENGTH")
+			continue;
+		envvec.push_back("HTTP_" + cgi_name + "=" + it->second);
+	}
+
+	char** envp = (char**)std::calloc(envvec.size() + 1, sizeof(char*));
+	if (!envp)
+		return NULL;
+	for (std::size_t i = 0; i < envvec.size(); ++i) {
+		envp[i] = strdup(envvec[i].c_str());
+		if (!envp[i]) {
+			for (std::size_t j = 0; j < i; ++j)
+				std::free(envp[j]);
+			std::free(envp);
+			return NULL;
+		}
+	}
+	envp[envvec.size()] = NULL;
+	return envp;
 }
 
 bool CgiHandler::handle(const IHttpRequest& req, const ILocationConfig& loc, IHttpResponse& res, IServerConfig const* serv) {
@@ -192,9 +255,6 @@ bool CgiHandler::handle(const IHttpRequest& req, const ILocationConfig& loc, IHt
 	int			pipefd[2];
 	int			outfile[2];
 
-	/*TODO add the script path
-	the script path come from the request
-	No traversal ..*/
 	std::string script_path = uri_decode(req.getUri());
 	uri_strip_servername(serv->getServerNames(), script_path);
 	std::stringstream fstring;
@@ -210,6 +270,11 @@ bool CgiHandler::handle(const IHttpRequest& req, const ILocationConfig& loc, IHt
 		res.setBody("<h1>500 Internal Server Error</h1>");
 		return true;
 	}
+	std::string cgi_script_name = req.getUri();
+	std::size_t qs_pos = cgi_script_name.find('?');
+	if (qs_pos != std::string::npos)
+		cgi_script_name = cgi_script_name.substr(0, qs_pos);
+
 	if (pipe(pipefd) == -1)
 		throw WebServerError("pipe failure");
 	if (pipe(outfile) == -1) {
@@ -236,52 +301,40 @@ bool CgiHandler::handle(const IHttpRequest& req, const ILocationConfig& loc, IHt
 			close(outfile[1]);
 			std::exit(EXIT_FAILURE);
 		}
-		const char* path	= cgipass.interpreter.c_str();
-		char*		args[3] = {const_cast<char*>(path), const_cast<char*>(script_path.c_str()), NULL};
-		#define SERVER_HEADER_LEN 6
-		/*SERVER_HEADER are headers built in by the server*/
-		char**		envp	= (char**)std::calloc(req.getAllHeaders().size() + SERVER_HEADER_LEN + 1, sizeof(char*));
+		const char* path    = cgipass.interpreter.c_str();
+		char*       args[3] = {const_cast<char*>(path), const_cast<char*>(script_path.c_str()), NULL};
+		char**      envp    = build_cgi_env(req, serv, cgi_script_name);
 		if (!envp) {
 			close(pipefd[0]);
 			close(outfile[1]);
-			exit(EXIT_FAILURE);
+			std::exit(EXIT_FAILURE);
 		}
-		envp[0] = strdup("GATEWAY_INTERFACE=CGI/1.1");
-		envp[1] = strdup("REMOTE_ADDR="); //TODO Pass the IP Address of the client
-		envp[2] = strdup("REMOTE_HOST="); //TODO GET the client remote host
-		envp[3] = strdup("SERVER_NAME=");//TODO local server name
-		envp[4] = strdup("SERVER_PORT=");//TODO server port
-		envp[5] = strdup("SERVER_SOFTWARE=webserv");
-		int i = SERVER_HEADER_LEN;
-		for (std::map<std::string, std::string>::const_iterator it = req.getAllHeaders().begin(); it != req.getAllHeaders().end(); ++it) {
-			std::stringstream env_string;
-			if (!is_cgi_metavariable(header_tocgi((*it).first)))
-				env_string << "HTTP_";
-			env_string << header_tocgi((*it).first) << "=" << (*it).second;
-			envp[i] = strdup(env_string.str().c_str());
-			i++;
-		}
-		envp[i] = NULL;
 		execve(path, args, envp);
-		for (int i = 0; envp[i]; ++i)
-			std::free(envp[i]);
-		std::free(envp);
+		free_envp(envp);
 		std::exit(EXIT_FAILURE);
 	}
 	close(pipefd[0]);
 	close(outfile[1]);
+
+	bool        timed_out = false;
+	std::string output;
 	{
-		char*		bufwrite = const_cast<char*>(req.getBody().c_str());
-		size_t		size	 = req.getBody().size();
-		size_t		pos		 = 0;
-		std::string output("");
-		char		bufread[BUFSIZ + 1];
-		bufread[BUFSIZ]		= 0;
+		char*       bufwrite       = const_cast<char*>(req.getBody().c_str());
+		size_t      size           = req.getBody().size();
+		size_t      pos            = 0;
+		char        bufread[BUFSIZ + 1];
+		bufread[BUFSIZ] = 0;
 		bool write_finished = false;
-		bool read_finished	= false;
+		bool read_finished  = false;
 		set_nonblocking(pipefd[1]);
 		set_nonblocking(outfile[0]);
+		time_t deadline = time(NULL) + TIMEOUT_SEC;
 		while (!write_finished || !read_finished) {
+			if (time(NULL) >= deadline) {
+				kill(pid, SIGKILL);
+				timed_out = true;
+				break;
+			}
 			if (!write_finished) {
 				ssize_t written = write(pipefd[1], bufwrite + pos, size - pos);
 				if (written < 0 && !(errno == EAGAIN || errno == EWOULDBLOCK)) {
@@ -313,20 +366,26 @@ bool CgiHandler::handle(const IHttpRequest& req, const ILocationConfig& loc, IHt
 				}
 			}
 		}
-		/*
-		TODO split output at the first blank lineparse the CGI's own headers (Content-Type, Status, etc.) into res, set the body to only the part after the
-		separator, and compute Content-Length on that body, not on headers+body.
-		*/
-		res.setHeader("Content-Length", ft_itoa(output.size()));
-		res.setBody(output);
 	}
+
 	if (pipefd[1] != -1)
 		close(pipefd[1]);
 	if (outfile[0] != -1)
 		close(outfile[0]);
+
 	int wstatus;
-	/*TODO: add a timeout / non-blocking reap with kill-on-timeout; and inspect wstatus — non-zero exit or signal should produce a 502 instead of return true.*/
 	waitpid(pid, &wstatus, 0);
-	(void)wstatus;
-	return (true); // TODO: return value doesn't reflect CGI failure (tied to the wstatus TODO above).
+
+	if (timed_out) {
+		res.setStatus(504);
+		res.setBody("<h1>504 Gateway Timeout</h1>");
+		return true;
+	}
+	if (!WIFEXITED(wstatus) || WEXITSTATUS(wstatus) != 0) {
+		res.setStatus(502);
+		res.setBody("<h1>502 Bad Gateway</h1>");
+		return true;
+	}
+	parse_cgi_response(output, res);
+	return true;
 }
