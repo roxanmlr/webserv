@@ -10,7 +10,7 @@
 class CgiHandler : public IRequestHandler {
 
 private:
-	static const int         TIMEOUT_SEC;
+	static const int		 TIMEOUT_SEC;
 	ILocationConfig::CgiPass cgipass;
 
 public:

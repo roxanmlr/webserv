@@ -29,9 +29,9 @@ StaticFileHandler& StaticFileHandler::operator=(const StaticFileHandler& base) {
 	return (*this);
 }
 
-bool StaticFileHandler::canHandle(const IHttpRequest& req, const ILocationConfig& loc, IServerConfig const *serv) {
+bool StaticFileHandler::canHandle(const IHttpRequest& req, const ILocationConfig& loc, IServerConfig const* serv) {
 	(void)loc;
-	(void) serv;
+	(void)serv;
 	if (req.getMethod() != "GET")
 		return (false);
 	std::string uri = req.getUri();

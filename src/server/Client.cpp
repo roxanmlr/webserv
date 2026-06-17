@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/01 20:23:45 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/10 18:34:39 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/17 23:29:18 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -105,11 +105,12 @@ void Client::onReadable() {
 			std::cerr << "HTTP request parsed with success" << std::endl;
 			read_buffer = this->_request.getBuffer();
 			this->state = PROCESSING;
+			this->write_status = WRITE_READY;
 		} else if (parse_state == IHttpRequest::PARSE_ERROR) {
 			std::cerr << "HTTP request error 400(bad request)" << std::endl;
 			this->state = PROCESSING;
+			this->write_status = WRITE_READY;
 		}
-		this->write_status = WRITE_READY;
 	}
 }
 
@@ -118,6 +119,7 @@ void Client::onWritable() {
 		return;
 	while (write_pos == 0 && write_status == WRITE_READY) {
 		StaticFileHandler staticFileHandler;
+		CgiHandler		  cgiHandler;
 		if (!serv) {
 			response.setStatus(500);
 			response.setBody("<h1>500 Internal Server error</h1>");
@@ -130,15 +132,25 @@ void Client::onWritable() {
 			break;
 		}
 		ILocationConfig const* bestMatch = optLoc.get();
-		if (staticFileHandler.canHandle(_request, *bestMatch, serv)) {
+		if (cgiHandler.canHandle(_request, *bestMatch, serv)) {
 			if (!bestMatch->isMethodAllowed(_request.getMethod())) {
 				response.setStatus(405);
 				response.setBody("<h1>405 Method Not Allowed</h1>");
 				break;
 			}
-
+			cgiHandler.handle(_request, *bestMatch, response, serv);
+			write_buffer = response.serialize();
+		} else if (staticFileHandler.canHandle(_request, *bestMatch, serv)) {
+			if (!bestMatch->isMethodAllowed(_request.getMethod())) {
+				response.setStatus(405);
+				response.setBody("<h1>405 Method Not Allowed</h1>");
+				break;
+			}
 			staticFileHandler.handle(_request, *bestMatch, response, serv);
 			write_buffer = response.serialize();
+		} else {
+			response.setStatus(404);
+			response.setBody("<h1>404 Not Found</h1>");
 		}
 		break;
 	}

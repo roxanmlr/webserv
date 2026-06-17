@@ -95,11 +95,14 @@ bool uri_strip_servername(std::vector<std::string> server_names, std::string& ur
 }
 
 bool CgiHandler::canHandle(const IHttpRequest& req, const ILocationConfig& loc, IServerConfig const* serv) {
+	(void)serv;
 	std::string uri = uri_decode(req.getUri());
 	if (uri.find("/../") != std::string::npos)
 		return false;
-	if (!uri_strip_servername(serv->getServerNames(), uri))
-		return false;
+	// Strip query string before extension matching
+	std::size_t q = uri.find('?');
+	if (q != std::string::npos)
+		uri = uri.substr(0, q);
 	std::size_t ext_pos = uri.find_last_of('.');
 	if (ext_pos == std::string::npos)
 		return false;
@@ -127,10 +130,10 @@ static std::string header_tocgi(const std::string& header) {
 }
 
 static void parse_cgi_response(const std::string& output, IHttpResponse& res) {
-	std::size_t sep_pos  = output.find("\r\n\r\n"); // Find 2 blank lines with carriage \r
-	std::size_t sep_len  = 4;
+	std::size_t sep_pos = output.find("\r\n\r\n"); // Find 2 blank lines with carriage \r
+	std::size_t sep_len = 4;
 	if (sep_pos == std::string::npos) {
-		sep_pos = output.find("\n\n"); //Find 2 blank lines without carriage
+		sep_pos = output.find("\n\n"); // Find 2 blank lines without carriage
 		sep_len = 2;
 	}
 	std::string body;
@@ -139,14 +142,14 @@ static void parse_cgi_response(const std::string& output, IHttpResponse& res) {
 		body = output;
 	} else {
 		header_section = output.substr(0, sep_pos);
-		body           = output.substr(sep_pos + sep_len);
+		body		   = output.substr(sep_pos + sep_len);
 	}
 
-	int status = 200;
+	int				   status = 200;
 
 	// Parse CGI headers line by line
 	std::istringstream ss(header_section);
-	std::string        line;
+	std::string		   line;
 	while (std::getline(ss, line)) {
 		if (!line.empty() && line[line.size() - 1] == '\r')
 			line.erase(line.size() - 1);
@@ -158,7 +161,7 @@ static void parse_cgi_response(const std::string& output, IHttpResponse& res) {
 		std::string name  = line.substr(0, colon);
 		std::string value = line.substr(colon + 1);
 		std::size_t first = value.find_first_not_of(" \t");
-		value             = (first != std::string::npos) ? value.substr(first) : "";
+		value			  = (first != std::string::npos) ? value.substr(first) : "";
 
 		if (name == "Status") {
 			// "Status: 404 Not Found" → extract the numeric code
@@ -184,14 +187,14 @@ static char** build_cgi_env(const IHttpRequest& req, IServerConfig const* serv, 
 	std::vector<std::string> envvec;
 
 	// Extract query string from URI (raw, not decoded)
-	const std::string& raw_uri = req.getUri();
-	std::string        query_string;
-	std::size_t        q_pos = raw_uri.find('?');
+	const std::string&		 raw_uri = req.getUri();
+	std::string				 query_string;
+	std::size_t				 q_pos = raw_uri.find('?');
 	if (q_pos != std::string::npos)
 		query_string = raw_uri.substr(q_pos + 1);
 
 	// SERVER_NAME and SERVER_PORT: prefer Host header, fall back to config
-	std::string host        = req.getHeader("Host");
+	std::string host		= req.getHeader("Host");
 	std::string server_name = host;
 	std::string server_port;
 	std::size_t colon = host.find(':');
@@ -249,14 +252,13 @@ static char** build_cgi_env(const IHttpRequest& req, IServerConfig const* serv, 
 }
 
 bool CgiHandler::handle(const IHttpRequest& req, const ILocationConfig& loc, IHttpResponse& res, IServerConfig const* serv) {
-	(void)serv;
-	if (!canHandle(req, loc, serv))
-		return false;
 	int			pipefd[2];
 	int			outfile[2];
 
 	std::string script_path = uri_decode(req.getUri());
-	uri_strip_servername(serv->getServerNames(), script_path);
+	std::size_t q = script_path.find('?');
+	if (q != std::string::npos)
+		script_path = script_path.substr(0, q);
 	std::stringstream fstring;
 	if (!serv->getRootDir().empty())
 		fstring << serv->getRootDir().get();
@@ -271,7 +273,7 @@ bool CgiHandler::handle(const IHttpRequest& req, const ILocationConfig& loc, IHt
 		return true;
 	}
 	std::string cgi_script_name = req.getUri();
-	std::size_t qs_pos = cgi_script_name.find('?');
+	std::size_t qs_pos			= cgi_script_name.find('?');
 	if (qs_pos != std::string::npos)
 		cgi_script_name = cgi_script_name.substr(0, qs_pos);
 
@@ -301,9 +303,9 @@ bool CgiHandler::handle(const IHttpRequest& req, const ILocationConfig& loc, IHt
 			close(outfile[1]);
 			std::exit(EXIT_FAILURE);
 		}
-		const char* path    = cgipass.interpreter.c_str();
-		char*       args[3] = {const_cast<char*>(path), const_cast<char*>(script_path.c_str()), NULL};
-		char**      envp    = build_cgi_env(req, serv, cgi_script_name);
+		const char* path	= cgipass.interpreter.c_str();
+		char*		args[3] = {const_cast<char*>(path), const_cast<char*>(script_path.c_str()), NULL};
+		char**		envp	= build_cgi_env(req, serv, cgi_script_name);
 		if (!envp) {
 			close(pipefd[0]);
 			close(outfile[1]);
@@ -316,16 +318,16 @@ bool CgiHandler::handle(const IHttpRequest& req, const ILocationConfig& loc, IHt
 	close(pipefd[0]);
 	close(outfile[1]);
 
-	bool        timed_out = false;
+	bool		timed_out = false;
 	std::string output;
 	{
-		char*       bufwrite       = const_cast<char*>(req.getBody().c_str());
-		size_t      size           = req.getBody().size();
-		size_t      pos            = 0;
-		char        bufread[BUFSIZ + 1];
-		bufread[BUFSIZ] = 0;
+		char*  bufwrite = const_cast<char*>(req.getBody().c_str());
+		size_t size		= req.getBody().size();
+		size_t pos		= 0;
+		char   bufread[BUFSIZ + 1];
+		bufread[BUFSIZ]		= 0;
 		bool write_finished = false;
-		bool read_finished  = false;
+		bool read_finished	= false;
 		set_nonblocking(pipefd[1]);
 		set_nonblocking(outfile[0]);
 		time_t deadline = time(NULL) + TIMEOUT_SEC;
