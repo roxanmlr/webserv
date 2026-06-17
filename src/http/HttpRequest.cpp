@@ -6,14 +6,15 @@
 /*   By: mzouhir <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/08 18:04:17 by mzouhir           #+#    #+#             */
-/*   Updated: 2026/06/17 16:33:59 by mzouhir          ###   ########.fr       */
+/*   Updated: 2026/06/17 18:29:19 by mzouhir          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "HttpRequest.hpp"
 #include <sstream>
+#include <iostream>
 
-HttpRequest::HttpRequest(void) : _state(REQUEST_LINE), _errorCode(0), _contentLength(0) {
+HttpRequest::HttpRequest(void) : _state(REQUEST_LINE), _errorCode(0), _contentLength(0), _chunke_size(0) {
 }
 
 HttpRequest::~HttpRequest() {
@@ -30,6 +31,7 @@ HttpRequest& HttpRequest::operator=(const HttpRequest& base) {
 		this->_body			 = base._body;
 		this->_errorCode	 = base._errorCode;
 		this->_contentLength = base._contentLength;
+		this->_chunke_size = base._chunke_size;
 	}
 	return (*this);
 }
@@ -145,6 +147,7 @@ IHttpRequest::ParseState HttpRequest::feed(const char* data, std::size_t len) {
 		std::string line;
 		line = this->_buffer.substr(0, pos);
 		this->_buffer.erase(0, pos + 2);
+
 		if (this->_state == REQUEST_LINE) {
 			if (this->parseRequestLine(line) == true)
 				this->_state = HEADER;
@@ -157,6 +160,8 @@ IHttpRequest::ParseState HttpRequest::feed(const char* data, std::size_t len) {
 			if (line.empty()) {
 				if (this->_contentLength > 0)
 					this->_state = BODY;
+				else if (this->getHeader("transfer-encoding") == "chunked")
+					this->_state = CHUNK_SIZE;
 				else {
 					this->_state = COMPLETE;
 					return (IHttpRequest::COMPLETE);
@@ -175,6 +180,50 @@ IHttpRequest::ParseState HttpRequest::feed(const char* data, std::size_t len) {
 			this->_body = this->_buffer.substr(0, this->_contentLength);
 			this->_buffer.erase(0, this->_contentLength);
 			this->_state = COMPLETE;
+			return (IHttpRequest::COMPLETE);
+		}
+	}
+	while (this->_state == CHUNK_SIZE || this->_state == CHUNK_DATA || this->_state == CHUNK_TRAILER)
+	{
+		if (this->_state == CHUNK_SIZE)
+		{
+			size_t pos = 0;
+			pos = _buffer.find("\r\n");
+			if (pos == std::string::npos)
+			{
+				return (IHttpRequest::INCOMPLETE);
+			}
+			std::string chunkLine = _buffer.substr(0, pos);
+			this->_buffer.erase(0, pos + 2);
+			std::stringstream chunkss;
+			chunkss << chunkLine;
+			if (!(chunkss >> std::hex >> this->_chunke_size))
+			{
+				this->_state = ERROR;
+				this->_errorCode = 400;
+				return (IHttpRequest::PARSE_ERROR);
+			}
+			if (this->_chunke_size == 0)
+				this->_state = CHUNK_TRAILER;
+			else
+				this->_state = CHUNK_DATA;
+		}
+		if (this->_state == CHUNK_DATA)
+		{
+			if (this->_buffer.size() < this->_chunke_size + 2)
+				return (IHttpRequest::INCOMPLETE);
+			this->_body.append(this->_buffer.substr(0, this->_chunke_size));
+			this->_buffer.erase(0, this->_chunke_size + 2);
+			this->_state = CHUNK_SIZE;
+		}
+		if (this->_state == CHUNK_TRAILER)
+		{
+			size_t pos = this->_buffer.find("\r\n");
+			if (pos == std::string::npos)
+				return (IHttpRequest::INCOMPLETE);
+			this->_buffer.erase(0, pos + 2);
+			this->_state = COMPLETE;
+			std::cout << "[Debug value of body CHUNK] " << this->_body << std::endl;
 			return (IHttpRequest::COMPLETE);
 		}
 	}

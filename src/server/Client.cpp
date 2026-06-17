@@ -6,7 +6,7 @@
 /*   By: mzouhir <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/01 20:23:45 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/17 15:41:43 by mzouhir          ###   ########.fr       */
+/*   Updated: 2026/06/17 17:55:49 by mzouhir          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -101,14 +101,15 @@ void Client::onReadable() {
 	}
 	if (!(read_buffer.empty())) {
 		IHttpRequest::ParseState parse_state = this->_request.feed(read_buffer.data(), read_buffer.size());
-		read_buffer.clear();
 		if (parse_state == IHttpRequest::COMPLETE) {
 			std::cerr << "HTTP request parsed with success" << std::endl;
+			read_buffer.clear();
 			read_buffer = this->_request.getBuffer();
 			this->state = PROCESSING;
 			this->write_status = WRITE_READY;
 		} else if (parse_state == IHttpRequest::PARSE_ERROR) {
 			std::cerr << "HTTP request error 400(bad request)" << std::endl;
+			read_buffer.clear();
 			this->state = PROCESSING;
 			this->write_status = WRITE_READY;
 		}

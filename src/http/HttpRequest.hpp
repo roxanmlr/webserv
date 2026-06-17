@@ -6,7 +6,7 @@
 /*   By: mzouhir <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/08 18:04:20 by mzouhir           #+#    #+#             */
-/*   Updated: 2026/06/09 16:01:00 by mzouhir          ###   ########.fr       */
+/*   Updated: 2026/06/17 16:44:48 by mzouhir          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,7 @@
 
 class HttpRequest : public IHttpRequest {
 private:
-	enum StateMachine { REQUEST_LINE, HEADER, BODY, COMPLETE, ERROR };
+	enum StateMachine { REQUEST_LINE, HEADER, BODY, COMPLETE, ERROR, CHUNK_SIZE, CHUNK_DATA, CHUNK_TRAILER};
 	std::string						   _buffer;
 	StateMachine					   _state;
 	std::string						   _method;
@@ -26,6 +26,7 @@ private:
 	std::string						   _body;
 	int								   _errorCode;
 	std::size_t						   _contentLength;
+	std::size_t						   _chunke_size;
 
 	bool							   parseRequestLine(const std::string& line);
 	bool							   parseHeaderLine(const std::string& line);
