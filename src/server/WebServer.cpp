@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:49:36 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/09 15:28:28 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/14 09:42:32 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,12 +37,6 @@ void WebServer::shouldClose() {
 	this->_shouldClose = true;
 }
 
-int set_nonblocking(int fd) {
-	int flags = fcntl(fd, F_GETFL, 0);
-	if (flags == -1)
-		return -1;
-	return fcntl(fd, F_SETFL, flags | O_NONBLOCK);
-}
 void WebServer::init(const IConfig& config) {
 	{
 		struct sockaddr_un addr;

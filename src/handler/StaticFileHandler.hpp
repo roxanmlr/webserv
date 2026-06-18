@@ -22,6 +22,6 @@ public:
 	StaticFileHandler(const StaticFileHandler& base);
 	StaticFileHandler& operator=(const StaticFileHandler& base);
 
-	virtual bool	   canHandle(const IHttpRequest& req, const ILocationConfig& loc);
+	virtual bool	   canHandle(const IHttpRequest& req, const ILocationConfig& loc, IServerConfig const* serv);
 	virtual bool	   handle(const IHttpRequest& req, const ILocationConfig& loc, IHttpResponse& res, IServerConfig const* serv);
 };

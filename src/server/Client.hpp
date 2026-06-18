@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/01 20:23:52 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/10 18:34:51 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/17 23:27:23 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,7 @@
 #ifndef CLIENT_HPP
 #define CLIENT_HPP
 #include "../config/IServerConfig.hpp"
+#include "../handler/CgiHandler.hpp"
 #include "../handler/StaticFileHandler.hpp"
 #include "../http/HttpRequest.hpp"
 #include "../http/HttpResponse.hpp"

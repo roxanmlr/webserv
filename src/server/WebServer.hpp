@@ -6,13 +6,14 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:49:18 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/09 15:28:45 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/14 10:27:16 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once
 #ifndef WEB_SERVER_HPP
 #define WEB_SERVER_HPP
+#include "../utils/utils.hpp"
 #include "Client.hpp"
 #include "IWebServer.hpp"
 #include "WebServerError.hpp"
