@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   LocationConfigBuilder.hpp                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lmilando <lmilando@42.fr>                  +#+  +:+       +#+        */
+/*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:47:38 by lmilando          #+#    #+#             */
-/*   Updated: 2026/05/27 23:47:39 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/18 22:53:20 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,6 +49,7 @@ public:
 	LocationConfigBuilder& setClientMaxBodySize(std::size_t client_max_body_size);
 	LocationConfigBuilder& setReturnConfig(ILocationConfig::ReturnConfig return_config);
 	LocationConfigBuilder& setUploadStore(std::string upload_store);
+	LocationConfigBuilder& setTimeOut(size_t seconds);
 	LocationConfigBuilder& setFastCgiPass(std::string fastcgi_pass);
 	LocationConfigBuilder& addFastCgiParam(std::string key, std::string value);
 	LocationConfigBuilder& addCgiPass(ILocationConfig::CgiPass cgi_pass);

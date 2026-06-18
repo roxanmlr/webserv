@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ConfigParser.hpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lmilando <lmilando@42.fr>                  +#+  +:+       +#+        */
+/*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:48:11 by lmilando          #+#    #+#             */
-/*   Updated: 2026/05/27 23:48:12 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/18 23:32:53 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,7 @@
 #include "Tokenizer.hpp"
 #include <cstdlib>
 #include <istream>
+#include <sstream>
 
 class ConfigParser : public IConfigParser {
 private:
@@ -33,6 +34,7 @@ private:
 	void						 parseIndexDirective(ServerConfigBuilder& builder, std::vector<Tokenizer::Token>& toks);
 	void						 parseErrorPageDirective(ServerConfigBuilder& builder, std::vector<Tokenizer::Token>& toks);
 	void						 parseClientMaxBodySizeDirective(ServerConfigBuilder& builder, std::vector<Tokenizer::Token>& toks);
+	void						 parseTimeOut(ServerConfigBuilder& builder, std::vector<Tokenizer::Token>& toks);
 
 	void						 parseLocationBlock(ServerConfigBuilder& builder, std::vector<Tokenizer::Token>& toks);
 	void						 parseLocationItem(LocationConfigBuilder& builder, std::vector<Tokenizer::Token>& toks);

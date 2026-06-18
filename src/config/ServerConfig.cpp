@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerConfig.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mzouhir <marvin@42.fr>                     +#+  +:+       +#+        */
+/*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:47:13 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/17 16:13:24 by mzouhir          ###   ########.fr       */
+/*   Updated: 2026/06/19 00:30:35 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,14 +14,14 @@
 #include "ILocationConfig.hpp"
 #include <sstream>
 
-ServerConfig::ServerConfig() : listen_addresses(), server_names(), root_dir(), indexes(), error_pages(), location_configs(), client_max_body_size() {
+ServerConfig::ServerConfig() : listen_addresses(), server_names(), root_dir(), indexes(), error_pages(), location_configs(), client_max_body_size(), timeOut() {
 }
 
 ServerConfig::ServerConfig(std::vector<IServerConfig::ListenAddress> listen_addresses, std::vector<std::string> server_names, Optional<std::string> root_dir,
 						   std::vector<std::string> indexes, std::vector<IServerConfig::ErrorPage> error_pages, std::vector<ILocationConfig*> location_configs,
-						   Optional<std::size_t> client_max_body_size)
+						   Optional<std::size_t> client_max_body_size, Optional<std::size_t> timeOut)
 	: listen_addresses(listen_addresses), server_names(server_names), root_dir(root_dir), indexes(indexes), error_pages(error_pages), location_configs(),
-	  client_max_body_size(client_max_body_size) {
+	  client_max_body_size(client_max_body_size), timeOut(timeOut) {
 	for (std::vector<ILocationConfig*>::iterator it = location_configs.begin(); it != location_configs.end(); ++it)
 		this->location_configs.push_back((*it)->clone());
 }
@@ -44,6 +44,7 @@ ServerConfig& ServerConfig::operator=(ServerConfig const& other) {
 	this->root_dir		   = other.root_dir;
 	this->indexes		   = other.indexes;
 	this->error_pages	   = other.error_pages;
+	this->timeOut		   = other.timeOut;
 	for (std::vector<ILocationConfig*>::iterator it = location_configs.begin(); it != location_configs.end(); ++it)
 		delete *it;
 	location_configs.clear();
@@ -79,6 +80,10 @@ std::vector<IServerConfig::ErrorPage> const& ServerConfig::getErrorPages() const
 
 std::vector<ILocationConfig*> const& ServerConfig::getLocations() const {
 	return location_configs;
+}
+
+Optional<size_t> ServerConfig::getTimeOut() const {
+	return timeOut;
 }
 
 Optional<std::size_t> const& ServerConfig::getClientMaxBodySize() const {

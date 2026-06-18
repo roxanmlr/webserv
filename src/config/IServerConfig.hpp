@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   IServerConfig.hpp                                  :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lmilando <lmilando@42.fr>                  +#+  +:+       +#+        */
+/*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:47:51 by lmilando          #+#    #+#             */
-/*   Updated: 2026/05/27 23:47:52 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/18 22:53:59 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,6 +40,7 @@ public:
 	virtual std::vector<ErrorPage> const&		 getErrorPages() const							  = 0;
 	virtual std::vector<ILocationConfig*> const& getLocations() const							  = 0;
 	virtual Optional<std::size_t> const&		 getClientMaxBodySize() const					  = 0;
+	virtual Optional<size_t>					 getTimeOut() const								  = 0;
 	virtual bool								 matchesServerName(const std::string& name) const = 0;
 	virtual Optional<ILocationConfig const*>	 matchLocation(const std::string& uri) const	  = 0;
 };

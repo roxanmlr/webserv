@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ConfigParser.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lmilando <lmilando@42.fr>                  +#+  +:+       +#+        */
+/*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:47:26 by lmilando          #+#    #+#             */
-/*   Updated: 2026/05/27 23:47:27 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/19 01:05:42 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -124,6 +124,8 @@ void ConfigParser::parseServerItem(ServerConfigBuilder& builder, std::vector<Tok
 		parseErrorPageDirective(builder, toks);
 	else if (first_eq("client_max_body_size", toks))
 		parseClientMaxBodySizeDirective(builder, toks);
+	else if (first_eq("timeout", toks))
+		parseTimeOut(builder, toks);
 	else if (toks.empty())
 		throw ConfigError("Unexpected end of file");
 	else
@@ -326,6 +328,16 @@ void ConfigParser::parseFastCgiParamDirective(LocationConfigBuilder& builder, st
 	builder.addFastCgiParam(key, value);
 }
 
+void ConfigParser::parseTimeOut(ServerConfigBuilder& builder, std::vector<Tokenizer::Token>& toks) {
+	consume_token("timeout", toks);
+	size_t		value;
+	std::string tok(consumeWordToken("timeout", toks));
+	if (!isAllDigits(tok))
+		throw ConfigError("invalid timeout value `" + tok + "`");
+	std::istringstream iss(tok);
+	iss >> value;
+	builder.setTimeOut(value);
+}
 // ─── Value helpers ───────────────────────────────────────────────────────────
 
 IServerConfig::ErrorPage ConfigParser::parseErrorPageValue(std::vector<Tokenizer::Token>& toks) {

@@ -45,11 +45,12 @@ private:
 	void							   addClient(int epoll_fd, int server_fd);
 	void							   serveClient(int epoll_fd, struct epoll_event events[MAX_EVENTS], int event_pos, int client_fd);
 
+	WebServer(WebServer const& other);
+	WebServer& operator=(WebServer const& other);
+
 public:
 	WebServer();
 	~WebServer();
-	WebServer(WebServer const& other);
-	WebServer& operator=(WebServer const& other);
 	void	   init(const IConfig& config);
 	void	   run();
 	void	   stop();

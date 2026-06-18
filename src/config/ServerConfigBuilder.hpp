@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerConfigBuilder.hpp                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lmilando <lmilando@42.fr>                  +#+  +:+       +#+        */
+/*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:47:57 by lmilando          #+#    #+#             */
-/*   Updated: 2026/05/27 23:47:58 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/18 23:10:04 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,6 +27,7 @@ private:
 	std::vector<IServerConfig::ErrorPage>	  error_pages;
 	std::vector<ILocationConfig*>			  location_configs;
 	Optional<std::size_t>					  client_max_body_size;
+	Optional<std::size_t>					  timeOut;
 
 public:
 	ServerConfigBuilder();
@@ -40,6 +41,7 @@ public:
 	ServerConfigBuilder& addErrorPage(IServerConfig::ErrorPage error_page);
 	ServerConfigBuilder& addLocation(ILocationConfig* location);
 	ServerConfigBuilder& setClientMaxBodySize(std::size_t maxsize);
+	ServerConfigBuilder& setTimeOut(size_t timeOut);
 	IServerConfig*		 build();
 };
 #endif

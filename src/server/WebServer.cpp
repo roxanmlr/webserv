@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:49:36 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/18 11:32:18 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/19 01:48:00 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,20 +17,6 @@ WebServer::WebServer() : listen_map(), _shouldClose(false) {
 
 WebServer::~WebServer() {
 	stop();
-}
-
-WebServer::WebServer(WebServer const& other) {
-	if (this == &other)
-		return;
-	*this = other;
-}
-
-WebServer& WebServer::operator=(WebServer const& other) {
-	if (this == &other)
-		return *this;
-	this->listen_map   = other.listen_map;
-	this->_shouldClose = other._shouldClose;
-	return *this;
 }
 
 void WebServer::shouldClose() {
@@ -220,6 +206,20 @@ void WebServer::run() {
 				} else
 					serveClient(epoll_fd, events, i, fd);
 			}
+			for (std::map<int, IClient*>::iterator it = client_map.begin(); it != client_map.end();) {
+				IClient* c = it->second;
+				if (c && c->isTimeOut()) {
+					c->onWritable();
+					close(it->first);
+					delete c;
+					std::map<int, IClient*>::iterator to_del = it;
+					++it;
+					client_map.erase(to_del);
+					continue;
+				}
+				++it;
+			}
+			
 		}
 		this->stop();
 		close(shutdown_fd);

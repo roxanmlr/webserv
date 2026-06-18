@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerConfig.hpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lmilando <lmilando@42.fr>                  +#+  +:+       +#+        */
+/*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:46:58 by lmilando          #+#    #+#             */
-/*   Updated: 2026/05/27 23:46:59 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/18 22:57:52 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,12 +25,13 @@ private:
 	std::vector<IServerConfig::ErrorPage>	  error_pages;
 	std::vector<ILocationConfig*>			  location_configs;
 	Optional<std::size_t>					  client_max_body_size;
+	Optional<size_t>						  timeOut;
 
 public:
 	ServerConfig();
 	ServerConfig(std::vector<IServerConfig::ListenAddress> listen_addresses, std::vector<std::string> server_names, Optional<std::string> root_dir,
 				 std::vector<std::string> indexes, std::vector<IServerConfig::ErrorPage> error_pages, std::vector<ILocationConfig*> location_configs,
-				 Optional<std::size_t> client_max_body_size);
+				 Optional<std::size_t> client_max_body_size, Optional<size_t> timeOut);
 	~ServerConfig();
 	ServerConfig(ServerConfig const& other);
 	ServerConfig&									 operator=(ServerConfig const& other);
@@ -42,6 +43,7 @@ public:
 	std::vector<IServerConfig::ErrorPage> const&	 getErrorPages() const;
 	std::vector<ILocationConfig*> const&			 getLocations() const;
 	Optional<std::size_t> const&					 getClientMaxBodySize() const;
+	Optional<size_t>								 getTimeOut() const;
 	bool											 matchesServerName(const std::string& name) const;
 	Optional<ILocationConfig const*>				 matchLocation(const std::string& uri) const;
 };

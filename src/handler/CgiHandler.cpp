@@ -18,8 +18,6 @@
 #include <ctime>
 #include <sstream>
 
-const int CgiHandler::TIMEOUT_SEC = 30;
-
 CgiHandler::CgiHandler() {
 }
 
@@ -76,23 +74,6 @@ std::string uri_decode(std::string uri) {
 	}
 	return out;
 }
-/*
-bool uri_strip_servername(std::vector<std::string> server_names, std::string& uri) {
-	std::string server_name("");
-	for (std::vector<std::string>::const_iterator it = server_names.begin(); it != server_names.end(); ++it) {
-		if (uri.find((*it), 0) == 0) {
-			server_name = *it;
-			break;
-		}
-	}
-	if (server_name == "")
-		return false;
-	uri.replace(0, server_name.size(), "");
-	while (uri.at(0) == '/') {
-		uri.replace(0, 1, "");
-	}
-	return true;
-}*/
 
 bool CgiHandler::canHandle(const IHttpRequest& req, const ILocationConfig& loc) {
 	std::string uri = uri_decode(req.getUri());
@@ -172,7 +153,6 @@ static void parse_cgi_response(const std::string& output, IHttpResponse& res) {
 	}
 
 	res.setStatus(status);
-	res.setHeader("Content-Length", ft_itoa(body.size()));
 	res.setBody(body);
 }
 
@@ -325,9 +305,10 @@ bool CgiHandler::handle(const IHttpRequest& req, const ILocationConfig& loc, IHt
 		bool read_finished	= false;
 		set_nonblocking(pipefd[1]);
 		set_nonblocking(outfile[0]);
-		time_t deadline = time(NULL) + TIMEOUT_SEC;
+		time_t s_time = time(NULL);
 		while (!write_finished || !read_finished) {
-			if (time(NULL) >= deadline) {
+			if ((!serv->getTimeOut().empty() && static_cast<size_t>(difftime(time(NULL), s_time)) >= serv->getTimeOut().get()) ||
+				(serv->getTimeOut().empty() && difftime(time(NULL), s_time) >= 30)) {
 				kill(pid, SIGKILL);
 				timed_out = true;
 				break;

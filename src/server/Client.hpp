@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/01 20:23:52 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/17 23:27:23 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/19 01:17:30 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,7 +30,7 @@ private:
 	enum IClient::State	 state;
 	IServerConfig const* serv;
 	time_t				 lastActivity;
-	enum ReadStatus { READ_OK, READ_CLOSED, READ_AGAIN, READ_ERROR, READ_OVERFLOW };
+	enum ReadStatus { READ_OK, READ_CLOSED, READ_AGAIN, READ_ERROR, READ_OVERFLOW, READ_TIMEOUT };
 	enum ReadStatus read_status;
 	std::string		read_buffer;
 	enum WriteStatus {
@@ -57,6 +57,7 @@ public:
 	int		getFd() const;
 	State	getState() const;
 	time_t	getLastActivity() const;
+	bool	isTimeOut();
 	void	onReadable();
 	void	setWriteBuffer(std::string const& write_buffer);
 	void	onWritable();

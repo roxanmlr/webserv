@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/01 20:23:45 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/18 11:41:54 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/19 01:22:34 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,7 +64,8 @@ time_t Client::getLastActivity() const {
 }
 
 void Client::onReadable() {
-	lastActivity = time(NULL);
+	if (isTimeOut())
+		return;
 	char tmp[4096];
 	while (1) {
 		if ((serv && !serv->getClientMaxBodySize().empty() && read_buffer.size() >= serv->getClientMaxBodySize().get()) || read_buffer.size() >= (1 << 18)) {
@@ -81,6 +82,7 @@ void Client::onReadable() {
 			std::string t;
 			t.append(tmp, n);
 			std::cerr << "READ OK : " << t << std::endl;
+			lastActivity = time(NULL);
 			continue;
 		}
 		if (n == 0) {
@@ -107,27 +109,34 @@ void Client::onReadable() {
 			read_buffer		   = this->_request.getBuffer();
 			this->state		   = PROCESSING;
 			this->write_status = WRITE_READY;
-			this->write_status = WRITE_READY;
 		} else if (parse_state == IHttpRequest::PARSE_ERROR) {
 			std::cerr << "HTTP request error 400(bad request)" << std::endl;
 			read_buffer.clear();
-			this->state		   = PROCESSING;
-			this->write_status = WRITE_READY;
+			this->state		   = PARSE_ERROR;
 			this->write_status = WRITE_READY;
 		}
 	} else if (read_status == READ_ERROR) {
-		// this->write_status = WRITE_READY;
+		this->write_status = WRITE_READY;
 	}
 }
 
 void Client::onWritable() {
 	if (write_status == WRITE_NOT_START)
 		return;
-	lastActivity = time(NULL);
-	std::cerr << "on Writable" << std::endl;
 	while (write_pos == 0 && write_status == WRITE_READY) {
 		Optional<ILocationConfig const*> optLoc;
 		{
+			if (state == TIMEOUT) {
+				response.setStatus(408);
+				response.setHeader("Connection", "close");
+				response.setBody("<h1>408 Request Timeout</>");
+				break;
+			}
+			if (state == PARSE_ERROR) {
+				response.setStatus(400);
+				response.setBody("<h1>Bad request</h1>");
+				break;
+			}
 			if (read_status == READ_OVERFLOW) {
 				response.setStatus(413);
 				response.setBody("<h1>Payload Too Large</h1>");
@@ -257,4 +266,19 @@ bool Client::shouldClose() const {
 
 void Client::setWriteBuffer(std::string const& write_buffer) {
 	this->write_buffer = write_buffer;
+}
+
+bool Client::isTimeOut() {
+	if (serv && !serv->getTimeOut().empty()) {
+		double diff = std::difftime(time(NULL), lastActivity);
+		if (diff < 0)
+			diff = -diff;
+		if (serv->getTimeOut().get() <= static_cast<size_t>(diff)) {
+			state			   = TIMEOUT;
+			read_status		   = READ_ERROR;
+			this->write_status = WRITE_READY;
+			return true;
+		}
+	}
+	return false;
 }

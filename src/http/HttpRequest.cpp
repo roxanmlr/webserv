@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   HttpRequest.cpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mzouhir <marvin@42.fr>                     +#+  +:+       +#+        */
+/*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/08 18:04:17 by mzouhir           #+#    #+#             */
-/*   Updated: 2026/06/17 18:29:19 by mzouhir          ###   ########.fr       */
+/*   Updated: 2026/06/19 00:57:28 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,6 +64,15 @@ const std::string& HttpRequest::getHeader(const std::string& name) const {
 	return (it->second);
 }
 
+bool HttpRequest::hasHeader(const std::string& name) const {
+
+	std::string lowername = name;
+	for (size_t i = 0; i < lowername.length(); i++) {
+		lowername[i] = std::tolower(lowername[i]);
+	}
+	return this->_header.count(lowername) > 0;
+}
+
 const std::map<std::string, std::string>& HttpRequest::getAllHeaders() const {
 	return _header;
 }
@@ -99,7 +108,8 @@ bool HttpRequest::parseRequestLine(const std::string& line) {
 		return (false);
 
 	this->_method = method;
-	this->_uri	  = uri;
+	this->_uri	  = uri.substr(0, uri.find('?'));
+	;
 	return (true);
 }
 

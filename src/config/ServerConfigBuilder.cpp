@@ -3,21 +3,21 @@
 /*                                                        :::      ::::::::   */
 /*   ServerConfigBuilder.cpp                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lmilando <lmilando@42.fr>                  +#+  +:+       +#+        */
+/*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:48:30 by lmilando          #+#    #+#             */
-/*   Updated: 2026/05/27 23:48:31 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/18 23:12:20 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "ServerConfigBuilder.hpp"
 
 ServerConfigBuilder::ServerConfigBuilder()
-	: listen_addresses(), server_names(), root_dir(), indexes(), error_pages(), location_configs(), client_max_body_size() {
+	: listen_addresses(), server_names(), root_dir(), indexes(), error_pages(), location_configs(), client_max_body_size(), timeOut() {
 }
 
 ServerConfigBuilder::ServerConfigBuilder(ServerConfigBuilder const& other)
-	: listen_addresses(), server_names(), root_dir(), indexes(), error_pages(), location_configs(), client_max_body_size() {
+	: listen_addresses(), server_names(), root_dir(), indexes(), error_pages(), location_configs(), client_max_body_size(), timeOut() {
 	*this = other;
 }
 
@@ -29,6 +29,7 @@ ServerConfigBuilder& ServerConfigBuilder::operator=(ServerConfigBuilder const& o
 	this->root_dir		   = other.root_dir;
 	this->indexes		   = other.indexes;
 	this->error_pages	   = other.error_pages;
+	this->timeOut		   = other.timeOut;
 	for (std::vector<ILocationConfig*>::const_iterator it = location_configs.begin(); it != location_configs.end(); ++it)
 		delete *it;
 	location_configs.clear();
@@ -100,6 +101,13 @@ ServerConfigBuilder& ServerConfigBuilder::setClientMaxBodySize(std::size_t maxsi
 	return *this;
 }
 
+ServerConfigBuilder& ServerConfigBuilder::setTimeOut(size_t timeOut) {
+	if (!this->timeOut.empty())
+		throw ConfigError("timeOut is already filled");
+	this->timeOut.set(timeOut);
+	return *this;
+}
+
 IServerConfig* ServerConfigBuilder::build() {
 	if (root_dir.empty()) {
 		throw ConfigError("No root directory provided");
@@ -110,5 +118,5 @@ IServerConfig* ServerConfigBuilder::build() {
 		lcfgBuilder.addAllowedMethod(ILocationConfig::GET);
 		location_configs.push_back(lcfgBuilder.build());
 	}
-	return new ServerConfig(listen_addresses, server_names, root_dir, indexes, error_pages, location_configs, client_max_body_size);
+	return new ServerConfig(listen_addresses, server_names, root_dir, indexes, error_pages, location_configs, client_max_body_size, timeOut);
 }

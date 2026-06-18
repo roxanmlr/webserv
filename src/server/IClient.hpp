@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:49:22 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/06 11:53:27 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/19 01:17:04 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,12 +17,13 @@
 
 class IClient {
 public:
-	enum State { INIT, READING_HEADERS, READING_BODY, PROCESSING, WRITING, CLOSING };
+	enum State { INIT, READING_HEADERS, READING_BODY, PROCESSING, WRITING, CLOSING, PARSE_ERROR, TIMEOUT };
 	virtual ~IClient() {
 	}
 	virtual int	   getFd() const								   = 0;
 	virtual State  getState() const								   = 0;
 	virtual time_t getLastActivity() const						   = 0;
+	virtual bool   isTimeOut()									   = 0;
 	virtual void   onReadable()									   = 0;
 	virtual void   setWriteBuffer(std::string const& write_buffer) = 0;
 	virtual void   onWritable()									   = 0;

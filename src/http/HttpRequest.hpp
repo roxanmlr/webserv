@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   HttpRequest.hpp                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mzouhir <marvin@42.fr>                     +#+  +:+       +#+        */
+/*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/08 18:04:20 by mzouhir           #+#    #+#             */
-/*   Updated: 2026/06/17 16:44:48 by mzouhir          ###   ########.fr       */
+/*   Updated: 2026/06/18 23:45:58 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,6 +41,7 @@ public:
 	virtual const std::string&						  getMethod(void) const;
 	virtual const std::string&						  getUri(void) const;
 	virtual const std::string&						  getHeader(const std::string& name) const;
+	virtual bool									  hasHeader(std::string const& name) const;
 	virtual const std::map<std::string, std::string>& getAllHeaders() const;
 	virtual const std::string&						  getBody(void) const;
 	virtual int										  getErrorCode(void) const;
