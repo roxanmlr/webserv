@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   StaticFileHandler.cpp                              :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mzouhir <marvin@42.fr>                     +#+  +:+       +#+        */
+/*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 15:28:23 by mzouhir           #+#    #+#             */
-/*   Updated: 2026/06/11 15:30:18 by mzouhir          ###   ########.fr       */
+/*   Updated: 2026/06/18 11:34:11 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,9 +29,8 @@ StaticFileHandler& StaticFileHandler::operator=(const StaticFileHandler& base) {
 	return (*this);
 }
 
-bool StaticFileHandler::canHandle(const IHttpRequest& req, const ILocationConfig& loc, IServerConfig const* serv) {
+bool StaticFileHandler::canHandle(const IHttpRequest& req, const ILocationConfig& loc) {
 	(void)loc;
-	(void)serv;
 	if (req.getMethod() != "GET")
 		return (false);
 	std::string uri = req.getUri();

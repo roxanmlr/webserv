@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerConfig.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lmilando <lmilando@42.fr>                  +#+  +:+       +#+        */
+/*   By: mzouhir <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:47:13 by lmilando          #+#    #+#             */
-/*   Updated: 2026/05/27 23:47:14 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/17 16:13:24 by mzouhir          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -147,10 +147,19 @@ std::ostream& operator<<(std::ostream& out, IServerConfig const& srv) {
 
 Optional<ILocationConfig const*> ServerConfig::matchLocation(const std::string& uri) const {
 	Optional<ILocationConfig const*> ret;
+	std::size_t						 longestMatch = 0;
 	for (std::vector<ILocationConfig*>::const_iterator it = location_configs.begin(); it != location_configs.end(); ++it) {
 		if ((*it)->matches(uri)) {
-			ret.set(*it);
-			return ret;
+			if ((*it)->getMatchType() == ILocationConfig::MATCH_EXACT) {
+				ret.set(*it);
+				return ret;
+			}
+
+			std::size_t currentLen = (*it)->getPath().length();
+			if (currentLen > longestMatch) {
+				longestMatch = currentLen;
+				ret.set(*it);
+			}
 		}
 	}
 	return ret;

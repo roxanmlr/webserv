@@ -19,6 +19,6 @@ public:
 	CgiHandler(const CgiHandler& base);
 	CgiHandler& operator=(const CgiHandler& base);
 
-	bool		canHandle(const IHttpRequest& req, const ILocationConfig& loc, IServerConfig const* serv);
+	bool		canHandle(const IHttpRequest& req, const ILocationConfig& loc);
 	bool		handle(const IHttpRequest& req, const ILocationConfig& loc, IHttpResponse& res, IServerConfig const* serv);
 };

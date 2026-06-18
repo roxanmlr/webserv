@@ -6,11 +6,12 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/01 20:23:45 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/18 08:10:25 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/18 11:41:54 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Client.hpp"
+#include "../handler/UploadHandler.hpp"
 #include "../mock/http/HttpRequestMock.cpp"
 #include "../mock/http/HttpResponseMock.cpp"
 
@@ -65,7 +66,7 @@ time_t Client::getLastActivity() const {
 void Client::onReadable() {
 	lastActivity = time(NULL);
 	char tmp[4096];
-	while (read_status != READ_ERROR) {
+	while (1) {
 		if ((serv && !serv->getClientMaxBodySize().empty() && read_buffer.size() >= serv->getClientMaxBodySize().get()) || read_buffer.size() >= (1 << 18)) {
 			read_buffer.clear();
 			read_status		   = READ_OVERFLOW;
@@ -82,16 +83,16 @@ void Client::onReadable() {
 			std::cerr << "READ OK : " << t << std::endl;
 			continue;
 		}
-		if (n == 0 || read_status == READ_OK) {
+		if (n == 0) {
 			read_status = READ_CLOSED;
-			std::cerr << "READ CLOSED" << std::endl;
+			std::cerr << "READ CLOSED (EOF)" << std::endl;
 			break;
 		}
 		if (errno == EINTR)
 			continue;
 		if (errno == EAGAIN || errno == EWOULDBLOCK) {
 			read_status = READ_AGAIN;
-			std::cerr << "READ AGAIN" << std::endl;
+			std::cerr << "READ AGAIN (EAGAIN)" << std::endl;
 			break;
 		}
 		read_status = READ_ERROR;
@@ -100,19 +101,22 @@ void Client::onReadable() {
 	}
 	if (!(read_buffer.empty())) {
 		IHttpRequest::ParseState parse_state = this->_request.feed(read_buffer.data(), read_buffer.size());
-		read_buffer.clear();
 		if (parse_state == IHttpRequest::COMPLETE) {
 			std::cerr << "HTTP request parsed with success" << std::endl;
+			read_buffer.clear();
 			read_buffer		   = this->_request.getBuffer();
 			this->state		   = PROCESSING;
 			this->write_status = WRITE_READY;
+			this->write_status = WRITE_READY;
 		} else if (parse_state == IHttpRequest::PARSE_ERROR) {
 			std::cerr << "HTTP request error 400(bad request)" << std::endl;
+			read_buffer.clear();
 			this->state		   = PROCESSING;
+			this->write_status = WRITE_READY;
 			this->write_status = WRITE_READY;
 		}
 	} else if (read_status == READ_ERROR) {
-		this->write_status = WRITE_READY;
+		// this->write_status = WRITE_READY;
 	}
 }
 
@@ -150,31 +154,41 @@ void Client::onWritable() {
 		{
 			StaticFileHandler staticFileHandler;
 			CgiHandler		  cgiHandler;
-			if (cgiHandler.canHandle(_request, *bestMatch, serv)) {
+			UploadHandler	  uploadHandler;
+			if (cgiHandler.canHandle(_request, *bestMatch)) {
 				if (!bestMatch->isMethodAllowed(_request.getMethod())) {
 					response.setStatus(405);
 					response.setBody("<h1>405 Method Not Allowed</h1>");
 					break;
 				}
 				cgiHandler.handle(_request, *bestMatch, response, serv);
-				write_buffer = response.serialize();
 				break;
 			}
-			if (staticFileHandler.canHandle(_request, *bestMatch, serv)) {
+			if (staticFileHandler.canHandle(_request, *bestMatch)) {
 				if (!bestMatch->isMethodAllowed(_request.getMethod())) {
 					response.setStatus(405);
 					response.setBody("<h1>405 Method Not Allowed</h1>");
 					break;
 				}
 				staticFileHandler.handle(_request, *bestMatch, response, serv);
-				write_buffer = response.serialize();
 				break;
 			}
-			response.setStatus(404);
-			response.setBody("<h1>404 Not Found</h1>");
+			if (uploadHandler.canHandle(_request, *bestMatch)) {
+				if (!bestMatch->isMethodAllowed(_request.getMethod())) {
+					response.setStatus(405);
+					response.setBody("<h1>405 Method Not Allowed</h1>");
+					break;
+				}
+				uploadHandler.handle(_request, *bestMatch, response, serv);
+				break;
+			}
+			response.setStatus(405);
+			response.setBody("<h1>405 Method not allowed (No handler found)</h1>");
+			break;
 		}
-		break;
 	}
+	if (write_status == WRITE_READY)
+		write_buffer = response.serialize();
 	while (write_pos < write_buffer.size()) {
 		const char* data = write_buffer.data() + write_pos;
 		size_t		size = write_buffer.size() - write_pos;
@@ -198,11 +212,11 @@ void Client::onWritable() {
 		write_pos	 = 0;
 		write_buffer.clear();
 		break;
-	}
-	if (write_status != WRITE_ERROR && write_pos == write_buffer.size()) {
-		write_buffer.clear();
-		write_pos	 = 0;
-		write_status = WRITE_DONE;
+		if (write_status != WRITE_ERROR && write_pos == write_buffer.size()) {
+			write_buffer.clear();
+			write_pos	 = 0;
+			write_status = WRITE_DONE;
+		}
 	}
 }
 
@@ -223,7 +237,9 @@ bool Client::wantsWrite() const {
 	switch (write_status) {
 	case WRITE_READY:
 		return true;
+		return true;
 	case WRITE_NOT_START:
+		return false;
 		return false;
 	case WRITE_OK:
 	case WRITE_AGAIN:

@@ -94,8 +94,7 @@ bool uri_strip_servername(std::vector<std::string> server_names, std::string& ur
 	return true;
 }*/
 
-bool CgiHandler::canHandle(const IHttpRequest& req, const ILocationConfig& loc, IServerConfig const* serv) {
-	(void)serv;
+bool CgiHandler::canHandle(const IHttpRequest& req, const ILocationConfig& loc) {
 	std::string uri = uri_decode(req.getUri());
 	if (uri.find("/../") != std::string::npos)
 		return false;
