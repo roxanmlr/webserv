@@ -186,14 +186,12 @@ static void free_envp(char** envp) {
 static char** build_cgi_env(const IHttpRequest& req, IServerConfig const* serv, const std::string& script_name) {
 	std::vector<std::string> envvec;
 
-	// Extract query string from URI (raw, not decoded)
 	const std::string&		 raw_uri = req.getUri();
 	std::string				 query_string;
 	std::size_t				 q_pos = raw_uri.find('?');
 	if (q_pos != std::string::npos)
 		query_string = raw_uri.substr(q_pos + 1);
 
-	// SERVER_NAME and SERVER_PORT: prefer Host header, fall back to config
 	std::string host		= req.getHeader("Host");
 	std::string server_name = host;
 	std::string server_port;
@@ -210,7 +208,6 @@ static char** build_cgi_env(const IHttpRequest& req, IServerConfig const* serv, 
 		server_port = ss.str();
 	}
 
-	// All required CGI/1.1 metavariables (RFC 3875 §4.1)
 	envvec.push_back("AUTH_TYPE=");
 	envvec.push_back("CONTENT_LENGTH=" + req.getHeader("Content-Length"));
 	envvec.push_back("CONTENT_TYPE=" + req.getHeader("Content-Type"));
@@ -227,7 +224,6 @@ static char** build_cgi_env(const IHttpRequest& req, IServerConfig const* serv, 
 	envvec.push_back("SERVER_PROTOCOL=HTTP/1.1");
 	envvec.push_back("SERVER_SOFTWARE=webserv");
 
-	// Protocol-specific HTTP headers as HTTP_* (skip CONTENT_TYPE and CONTENT_LENGTH)
 	for (std::map<std::string, std::string>::const_iterator it = req.getAllHeaders().begin(); it != req.getAllHeaders().end(); ++it) {
 		std::string cgi_name = header_tocgi(it->first);
 		if (cgi_name == "CONTENT_TYPE" || cgi_name == "CONTENT_LENGTH")
@@ -256,7 +252,7 @@ bool CgiHandler::handle(const IHttpRequest& req, const ILocationConfig& loc, IHt
 	int			outfile[2];
 
 	std::string script_path = uri_decode(req.getUri());
-	std::size_t q = script_path.find('?');
+	std::size_t q			= script_path.find('?');
 	if (q != std::string::npos)
 		script_path = script_path.substr(0, q);
 	std::stringstream fstring;

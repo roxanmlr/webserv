@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/01 20:23:45 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/17 23:29:18 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/18 08:10:25 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -68,8 +68,8 @@ void Client::onReadable() {
 	while (read_status != READ_ERROR) {
 		if ((serv && !serv->getClientMaxBodySize().empty() && read_buffer.size() >= serv->getClientMaxBodySize().get()) || read_buffer.size() >= (1 << 18)) {
 			read_buffer.clear();
-			read_status = READ_OVERFLOW;
-			std::cerr << "READ OVERFLOW" << std::endl;
+			read_status		   = READ_OVERFLOW;
+			this->write_status = WRITE_READY;
 			break;
 		}
 		ssize_t n = recv(fd, tmp, sizeof(tmp), 0);
@@ -103,59 +103,78 @@ void Client::onReadable() {
 		read_buffer.clear();
 		if (parse_state == IHttpRequest::COMPLETE) {
 			std::cerr << "HTTP request parsed with success" << std::endl;
-			read_buffer = this->_request.getBuffer();
-			this->state = PROCESSING;
+			read_buffer		   = this->_request.getBuffer();
+			this->state		   = PROCESSING;
 			this->write_status = WRITE_READY;
 		} else if (parse_state == IHttpRequest::PARSE_ERROR) {
 			std::cerr << "HTTP request error 400(bad request)" << std::endl;
-			this->state = PROCESSING;
+			this->state		   = PROCESSING;
 			this->write_status = WRITE_READY;
 		}
+	} else if (read_status == READ_ERROR) {
+		this->write_status = WRITE_READY;
 	}
 }
 
 void Client::onWritable() {
 	if (write_status == WRITE_NOT_START)
 		return;
+	lastActivity = time(NULL);
+	std::cerr << "on Writable" << std::endl;
 	while (write_pos == 0 && write_status == WRITE_READY) {
-		StaticFileHandler staticFileHandler;
-		CgiHandler		  cgiHandler;
-		if (!serv) {
-			response.setStatus(500);
-			response.setBody("<h1>500 Internal Server error</h1>");
-			break;
-		}
-		Optional<ILocationConfig const*> optLoc = serv->matchLocation(_request.getUri());
-		if (optLoc.empty()) {
-			response.setStatus(404);
-			response.setBody("<h1>404 Not Found</h1>");
-			break;
+		Optional<ILocationConfig const*> optLoc;
+		{
+			if (read_status == READ_OVERFLOW) {
+				response.setStatus(413);
+				response.setBody("<h1>Payload Too Large</h1>");
+				break;
+			}
+			if (read_status == READ_ERROR) {
+				response.setStatus(400);
+				response.setBody("<h1>400 Bad Request</h1>");
+				break;
+			}
+			if (!serv) {
+				response.setStatus(500);
+				response.setBody("<h1>500 Internal Server error</h1>");
+				break;
+			}
+			optLoc = serv->matchLocation(_request.getUri());
+			if (optLoc.empty()) {
+				response.setStatus(404);
+				response.setBody("<h1>404 Not Found</h1>");
+				break;
+			}
 		}
 		ILocationConfig const* bestMatch = optLoc.get();
-		if (cgiHandler.canHandle(_request, *bestMatch, serv)) {
-			if (!bestMatch->isMethodAllowed(_request.getMethod())) {
-				response.setStatus(405);
-				response.setBody("<h1>405 Method Not Allowed</h1>");
+		{
+			StaticFileHandler staticFileHandler;
+			CgiHandler		  cgiHandler;
+			if (cgiHandler.canHandle(_request, *bestMatch, serv)) {
+				if (!bestMatch->isMethodAllowed(_request.getMethod())) {
+					response.setStatus(405);
+					response.setBody("<h1>405 Method Not Allowed</h1>");
+					break;
+				}
+				cgiHandler.handle(_request, *bestMatch, response, serv);
+				write_buffer = response.serialize();
 				break;
 			}
-			cgiHandler.handle(_request, *bestMatch, response, serv);
-			write_buffer = response.serialize();
-		} else if (staticFileHandler.canHandle(_request, *bestMatch, serv)) {
-			if (!bestMatch->isMethodAllowed(_request.getMethod())) {
-				response.setStatus(405);
-				response.setBody("<h1>405 Method Not Allowed</h1>");
+			if (staticFileHandler.canHandle(_request, *bestMatch, serv)) {
+				if (!bestMatch->isMethodAllowed(_request.getMethod())) {
+					response.setStatus(405);
+					response.setBody("<h1>405 Method Not Allowed</h1>");
+					break;
+				}
+				staticFileHandler.handle(_request, *bestMatch, response, serv);
+				write_buffer = response.serialize();
 				break;
 			}
-			staticFileHandler.handle(_request, *bestMatch, response, serv);
-			write_buffer = response.serialize();
-		} else {
 			response.setStatus(404);
 			response.setBody("<h1>404 Not Found</h1>");
 		}
 		break;
 	}
-	lastActivity = time(NULL);
-	std::cerr << "on Writable" << std::endl;
 	while (write_pos < write_buffer.size()) {
 		const char* data = write_buffer.data() + write_pos;
 		size_t		size = write_buffer.size() - write_pos;
@@ -203,8 +222,9 @@ bool Client::wantsRead() const {
 bool Client::wantsWrite() const {
 	switch (write_status) {
 	case WRITE_READY:
-	case WRITE_NOT_START:
 		return true;
+	case WRITE_NOT_START:
+		return false;
 	case WRITE_OK:
 	case WRITE_AGAIN:
 		return write_pos < write_buffer.size();
