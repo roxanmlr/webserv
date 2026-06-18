@@ -76,7 +76,7 @@ std::string uri_decode(std::string uri) {
 	}
 	return out;
 }
-
+/*
 bool uri_strip_servername(std::vector<std::string> server_names, std::string& uri) {
 	std::string server_name("");
 	for (std::vector<std::string>::const_iterator it = server_names.begin(); it != server_names.end(); ++it) {
@@ -92,7 +92,7 @@ bool uri_strip_servername(std::vector<std::string> server_names, std::string& ur
 		uri.replace(0, 1, "");
 	}
 	return true;
-}
+}*/
 
 bool CgiHandler::canHandle(const IHttpRequest& req, const ILocationConfig& loc, IServerConfig const* serv) {
 	(void)serv;
@@ -107,7 +107,7 @@ bool CgiHandler::canHandle(const IHttpRequest& req, const ILocationConfig& loc, 
 	if (ext_pos == std::string::npos)
 		return false;
 	for (std::vector<ILocationConfig::CgiPass>::const_iterator it = loc.getCgiPasses().begin(); it != loc.getCgiPasses().end(); ++it) {
-		if (uri.find((*it).extension, ext_pos) == ext_pos && uri.find(loc.getPath()) != std::string::npos) {
+		if ((ext_pos + (*it).extension.size()) == uri.size() && uri.find((*it).extension, ext_pos) == ext_pos && uri.find(loc.getPath(), 0) == 0) {
 			this->cgipass = (*it);
 			return true;
 		}
@@ -167,7 +167,7 @@ static void parse_cgi_response(const std::string& output, IHttpResponse& res) {
 			// "Status: 404 Not Found" → extract the numeric code
 			std::istringstream code_ss(value);
 			code_ss >> status;
-		} else {
+		} else if (name != "Content-Length") {
 			res.setHeader(name, value);
 		}
 	}
