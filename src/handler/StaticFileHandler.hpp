@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   StaticFileHandler.hpp                              :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mzouhir <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 15:28:25 by mzouhir           #+#    #+#             */
-/*   Updated: 2026/06/18 11:34:18 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/19 16:38:48 by mzouhir          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@
 
 class StaticFileHandler : public IRequestHandler {
 private:
+	void generateDirectoryListing(const std::string & path, const std::string & uri, IHttpResponse & res);
 public:
 	virtual ~StaticFileHandler();
 	StaticFileHandler();

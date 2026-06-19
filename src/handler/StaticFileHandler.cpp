@@ -3,16 +3,18 @@
 /*                                                        :::      ::::::::   */
 /*   StaticFileHandler.cpp                              :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mzouhir <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 15:28:23 by mzouhir           #+#    #+#             */
-/*   Updated: 2026/06/18 11:34:11 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/19 17:00:39 by mzouhir          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "StaticFileHandler.hpp"
 #include <fstream>
 #include <sstream>
+#include <dirent.h>
+#include <sys/stat.h>
 
 StaticFileHandler::StaticFileHandler() {
 }
@@ -73,9 +75,21 @@ bool StaticFileHandler::handle(const IHttpRequest& req, const ILocationConfig& l
 				}
 			}
 		}
-		// TODO
-		if (indexFound == false && !index.empty())
-			path = path + index[0];
+		if (!indexFound)
+		{
+			if (serv->hasDirectoryList())
+			{
+				generateDirectoryListing(path, req.getUri(), res);
+				return (true);
+			}
+			else
+			{
+				res.setStatus(403);
+				res.setBody("<h1>403 Forbidden</h1>");
+				return (true);
+			}
+		}
+
 	}
 	// now we have to construct de response by opening the file found
 	std::ifstream file(path.c_str());
@@ -89,4 +103,35 @@ bool StaticFileHandler::handle(const IHttpRequest& req, const ILocationConfig& l
 	res.setStatus(200);
 	res.setBody(ss.str());
 	return (true);
+}
+
+void StaticFileHandler::generateDirectoryListing(const std::string & path, const std::string & uri, IHttpResponse & res)
+{
+	DIR* dir = opendir(path.c_str());
+	if (!dir)
+	{
+		res.setStatus(403);
+		res.setBody("<h1>403 Forbidden</h1>");
+		return ;
+	}
+
+	std::stringstream ss;
+	ss << "<html><head><title>Index of " << uri << "</title></head><body>";
+	ss << "<h1>Index of " << uri << "</h1><hr><pre>";
+	struct dirent* entry;
+	while ((entry = readdir(dir)) != NULL)
+	{
+		std::string name = entry->d_name;
+		if (name == ".")
+			continue;
+		std::string link = name;
+
+		if (entry->d_type == DT_DIR)
+			link+= "/";
+		ss << "<a href=\"" << link << "\">" << link << "</a><br>";
+	}
+	ss << "</pre><hr></body></html>";
+	closedir(dir);
+	res.setStatus(200);
+	res.setBody(ss.str());
 }
