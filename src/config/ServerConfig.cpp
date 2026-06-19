@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:47:13 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/19 00:30:35 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/20 01:13:39 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,7 @@
 #include "ILocationConfig.hpp"
 #include <sstream>
 
-ServerConfig::ServerConfig() : listen_addresses(), server_names(), root_dir(), indexes(), error_pages(), location_configs(), client_max_body_size(), timeOut() {
+ServerConfig::ServerConfig() : listen_addresses(), server_names(), root_dir(), indexes(), error_pages(), location_configs(), client_max_body_size(), timeOut(),_hasDirectoryList(false) {
 }
 
 ServerConfig::ServerConfig(std::vector<IServerConfig::ListenAddress> listen_addresses, std::vector<std::string> server_names, Optional<std::string> root_dir,
@@ -45,6 +45,7 @@ ServerConfig& ServerConfig::operator=(ServerConfig const& other) {
 	this->indexes		   = other.indexes;
 	this->error_pages	   = other.error_pages;
 	this->timeOut		   = other.timeOut;
+	this->_hasDirectoryList = other._hasDirectoryList;
 	for (std::vector<ILocationConfig*>::iterator it = location_configs.begin(); it != location_configs.end(); ++it)
 		delete *it;
 	location_configs.clear();
