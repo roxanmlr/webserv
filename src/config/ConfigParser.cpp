@@ -155,7 +155,16 @@ void ConfigParser::parseRootDirective(ServerConfigBuilder& builder, std::vector<
 
 void ConfigParser::parseDirectoryList(ServerConfigBuilder& builder, std::vector<Tokenizer::Token>& toks) {
 	consume_token("directory_list", toks);
-	builder.hasDirectoryList();
+	if (first_eq("enable", toks)) {
+		consume_token("enable", toks);
+		builder.hasDirectoryList();
+		return;
+	} else if (first_eq("disable", toks)) {
+		consume_token("disable", toks);
+		builder.hasNotDirectoryList();
+		return;
+	}
+	throw ConfigError("incomplete directory_list directive");
 }
 
 void ConfigParser::parseIndexDirective(ServerConfigBuilder& builder, std::vector<Tokenizer::Token>& toks) {

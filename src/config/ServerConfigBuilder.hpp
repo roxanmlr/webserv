@@ -28,7 +28,7 @@ private:
 	std::vector<ILocationConfig*>			  location_configs;
 	Optional<std::size_t>					  client_max_body_size;
 	Optional<std::size_t>					  timeOut;
-	bool									  _hasDirectoryList;
+	int										  _hasDirectoryList; // 0 init, 1 has dir list , 2 has not dir list
 
 public:
 	ServerConfigBuilder();
@@ -44,6 +44,7 @@ public:
 	ServerConfigBuilder& setClientMaxBodySize(std::size_t maxsize);
 	ServerConfigBuilder& setTimeOut(size_t timeOut);
 	ServerConfigBuilder& hasDirectoryList();
+	ServerConfigBuilder& hasNotDirectoryList();
 	IServerConfig*		 build();
 };
 #endif

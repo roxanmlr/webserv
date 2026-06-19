@@ -13,13 +13,11 @@
 #include "ServerConfigBuilder.hpp"
 
 ServerConfigBuilder::ServerConfigBuilder()
-	: listen_addresses(), server_names(), root_dir(), indexes(), error_pages(), location_configs(), client_max_body_size(), timeOut(),
-	  _hasDirectoryList(false) {
+	: listen_addresses(), server_names(), root_dir(), indexes(), error_pages(), location_configs(), client_max_body_size(), timeOut(), _hasDirectoryList(0) {
 }
 
 ServerConfigBuilder::ServerConfigBuilder(ServerConfigBuilder const& other)
-	: listen_addresses(), server_names(), root_dir(), indexes(), error_pages(), location_configs(), client_max_body_size(), timeOut(),
-	  _hasDirectoryList(false) {
+	: listen_addresses(), server_names(), root_dir(), indexes(), error_pages(), location_configs(), client_max_body_size(), timeOut(), _hasDirectoryList(0) {
 	*this = other;
 }
 
@@ -111,9 +109,16 @@ ServerConfigBuilder& ServerConfigBuilder::setTimeOut(size_t timeOut) {
 }
 
 ServerConfigBuilder& ServerConfigBuilder::hasDirectoryList() {
-	if (_hasDirectoryList)
+	if (_hasDirectoryList != 0) // ) not init
 		throw ConfigError("Duplicate directory_list directive");
-	_hasDirectoryList = true;
+	_hasDirectoryList = 1; // has
+	return *this;
+}
+
+ServerConfigBuilder& ServerConfigBuilder::hasNotDirectoryList() {
+	if (_hasDirectoryList != 0) // ) not init
+		throw ConfigError("Duplicate directory_list directive");
+	_hasDirectoryList = 2; // has
 	return *this;
 }
 
@@ -127,5 +132,6 @@ IServerConfig* ServerConfigBuilder::build() {
 		lcfgBuilder.addAllowedMethod(ILocationConfig::GET);
 		location_configs.push_back(lcfgBuilder.build());
 	}
-	return new ServerConfig(listen_addresses, server_names, root_dir, indexes, error_pages, location_configs, client_max_body_size, timeOut, _hasDirectoryList);
+	return new ServerConfig(listen_addresses, server_names, root_dir, indexes, error_pages, location_configs, client_max_body_size, timeOut,
+							_hasDirectoryList == 1);
 }
