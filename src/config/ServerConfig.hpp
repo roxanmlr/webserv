@@ -26,12 +26,13 @@ private:
 	std::vector<ILocationConfig*>			  location_configs;
 	Optional<std::size_t>					  client_max_body_size;
 	Optional<size_t>						  timeOut;
+	bool									  _hasDirectoryList;
 
 public:
 	ServerConfig();
 	ServerConfig(std::vector<IServerConfig::ListenAddress> listen_addresses, std::vector<std::string> server_names, Optional<std::string> root_dir,
 				 std::vector<std::string> indexes, std::vector<IServerConfig::ErrorPage> error_pages, std::vector<ILocationConfig*> location_configs,
-				 Optional<std::size_t> client_max_body_size, Optional<size_t> timeOut);
+				 Optional<std::size_t> client_max_body_size, Optional<size_t> timeOut, bool hasDirectoryList);
 	~ServerConfig();
 	ServerConfig(ServerConfig const& other);
 	ServerConfig&									 operator=(ServerConfig const& other);
@@ -46,5 +47,6 @@ public:
 	Optional<size_t>								 getTimeOut() const;
 	bool											 matchesServerName(const std::string& name) const;
 	Optional<ILocationConfig const*>				 matchLocation(const std::string& uri) const;
+	bool											 hasDirectoryList() const;
 };
 #endif

@@ -35,6 +35,7 @@ private:
 	void						 parseErrorPageDirective(ServerConfigBuilder& builder, std::vector<Tokenizer::Token>& toks);
 	void						 parseClientMaxBodySizeDirective(ServerConfigBuilder& builder, std::vector<Tokenizer::Token>& toks);
 	void						 parseTimeOut(ServerConfigBuilder& builder, std::vector<Tokenizer::Token>& toks);
+	void						 parseDirectoryList(ServerConfigBuilder& builder, std::vector<Tokenizer::Token>& toks);
 
 	void						 parseLocationBlock(ServerConfigBuilder& builder, std::vector<Tokenizer::Token>& toks);
 	void						 parseLocationItem(LocationConfigBuilder& builder, std::vector<Tokenizer::Token>& toks);

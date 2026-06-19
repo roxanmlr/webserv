@@ -126,6 +126,8 @@ void ConfigParser::parseServerItem(ServerConfigBuilder& builder, std::vector<Tok
 		parseClientMaxBodySizeDirective(builder, toks);
 	else if (first_eq("timeout", toks))
 		parseTimeOut(builder, toks);
+	else if (first_eq("directory_list", toks))
+		parseDirectoryList(builder, toks);
 	else if (toks.empty())
 		throw ConfigError("Unexpected end of file");
 	else
@@ -149,6 +151,11 @@ void ConfigParser::parseServerNameDirective(ServerConfigBuilder& builder, std::v
 void ConfigParser::parseRootDirective(ServerConfigBuilder& builder, std::vector<Tokenizer::Token>& toks) {
 	consume_token("root", toks);
 	builder.setRootDir(consumeWordToken("root", toks));
+}
+
+void ConfigParser::parseDirectoryList(ServerConfigBuilder& builder, std::vector<Tokenizer::Token>& toks) {
+	consume_token("directory_list", toks);
+	builder.hasDirectoryList();
 }
 
 void ConfigParser::parseIndexDirective(ServerConfigBuilder& builder, std::vector<Tokenizer::Token>& toks) {

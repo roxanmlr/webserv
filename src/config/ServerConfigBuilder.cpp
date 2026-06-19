@@ -13,11 +13,13 @@
 #include "ServerConfigBuilder.hpp"
 
 ServerConfigBuilder::ServerConfigBuilder()
-	: listen_addresses(), server_names(), root_dir(), indexes(), error_pages(), location_configs(), client_max_body_size(), timeOut() {
+	: listen_addresses(), server_names(), root_dir(), indexes(), error_pages(), location_configs(), client_max_body_size(), timeOut(),
+	  _hasDirectoryList(false) {
 }
 
 ServerConfigBuilder::ServerConfigBuilder(ServerConfigBuilder const& other)
-	: listen_addresses(), server_names(), root_dir(), indexes(), error_pages(), location_configs(), client_max_body_size(), timeOut() {
+	: listen_addresses(), server_names(), root_dir(), indexes(), error_pages(), location_configs(), client_max_body_size(), timeOut(),
+	  _hasDirectoryList(false) {
 	*this = other;
 }
 
@@ -108,6 +110,13 @@ ServerConfigBuilder& ServerConfigBuilder::setTimeOut(size_t timeOut) {
 	return *this;
 }
 
+ServerConfigBuilder& ServerConfigBuilder::hasDirectoryList() {
+	if (_hasDirectoryList)
+		throw ConfigError("Duplicate directory_list directive");
+	_hasDirectoryList = true;
+	return *this;
+}
+
 IServerConfig* ServerConfigBuilder::build() {
 	if (root_dir.empty()) {
 		throw ConfigError("No root directory provided");
@@ -118,5 +127,5 @@ IServerConfig* ServerConfigBuilder::build() {
 		lcfgBuilder.addAllowedMethod(ILocationConfig::GET);
 		location_configs.push_back(lcfgBuilder.build());
 	}
-	return new ServerConfig(listen_addresses, server_names, root_dir, indexes, error_pages, location_configs, client_max_body_size, timeOut);
+	return new ServerConfig(listen_addresses, server_names, root_dir, indexes, error_pages, location_configs, client_max_body_size, timeOut, _hasDirectoryList);
 }

@@ -219,7 +219,6 @@ void WebServer::run() {
 				}
 				++it;
 			}
-			
 		}
 		this->stop();
 		close(shutdown_fd);

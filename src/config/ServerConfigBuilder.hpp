@@ -28,6 +28,7 @@ private:
 	std::vector<ILocationConfig*>			  location_configs;
 	Optional<std::size_t>					  client_max_body_size;
 	Optional<std::size_t>					  timeOut;
+	bool									  _hasDirectoryList;
 
 public:
 	ServerConfigBuilder();
@@ -42,6 +43,7 @@ public:
 	ServerConfigBuilder& addLocation(ILocationConfig* location);
 	ServerConfigBuilder& setClientMaxBodySize(std::size_t maxsize);
 	ServerConfigBuilder& setTimeOut(size_t timeOut);
+	ServerConfigBuilder& hasDirectoryList();
 	IServerConfig*		 build();
 };
 #endif

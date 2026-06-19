@@ -19,9 +19,9 @@ ServerConfig::ServerConfig() : listen_addresses(), server_names(), root_dir(), i
 
 ServerConfig::ServerConfig(std::vector<IServerConfig::ListenAddress> listen_addresses, std::vector<std::string> server_names, Optional<std::string> root_dir,
 						   std::vector<std::string> indexes, std::vector<IServerConfig::ErrorPage> error_pages, std::vector<ILocationConfig*> location_configs,
-						   Optional<std::size_t> client_max_body_size, Optional<std::size_t> timeOut)
+						   Optional<std::size_t> client_max_body_size, Optional<std::size_t> timeOut, bool _hasDirectoryList)
 	: listen_addresses(listen_addresses), server_names(server_names), root_dir(root_dir), indexes(indexes), error_pages(error_pages), location_configs(),
-	  client_max_body_size(client_max_body_size), timeOut(timeOut) {
+	  client_max_body_size(client_max_body_size), timeOut(timeOut), _hasDirectoryList(_hasDirectoryList) {
 	for (std::vector<ILocationConfig*>::iterator it = location_configs.begin(); it != location_configs.end(); ++it)
 		this->location_configs.push_back((*it)->clone());
 }
@@ -96,6 +96,10 @@ bool ServerConfig::matchesServerName(const std::string& name) const {
 			return true;
 	}
 	return false;
+}
+
+bool ServerConfig::hasDirectoryList() const {
+	return _hasDirectoryList;
 }
 
 static std::string sizeToStr(std::size_t sz) {

@@ -51,9 +51,9 @@ private:
 public:
 	WebServer();
 	~WebServer();
-	void	   init(const IConfig& config);
-	void	   run();
-	void	   stop();
-	void	   shouldClose();
+	void init(const IConfig& config);
+	void run();
+	void stop();
+	void shouldClose();
 };
 #endif
