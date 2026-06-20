@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:47:57 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/18 23:10:04 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/20 07:57:37 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,8 +43,8 @@ public:
 	ServerConfigBuilder& addLocation(ILocationConfig* location);
 	ServerConfigBuilder& setClientMaxBodySize(std::size_t maxsize);
 	ServerConfigBuilder& setTimeOut(size_t timeOut);
-	ServerConfigBuilder& hasDirectoryList();
-	ServerConfigBuilder& hasNotDirectoryList();
+	ServerConfigBuilder& autoIndexOn();
+	ServerConfigBuilder& autoIndexOff();
 	IServerConfig*		 build();
 };
 #endif

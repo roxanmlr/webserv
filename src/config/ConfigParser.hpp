@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:48:11 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/18 23:32:53 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/20 07:54:59 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,7 +35,7 @@ private:
 	void						 parseErrorPageDirective(ServerConfigBuilder& builder, std::vector<Tokenizer::Token>& toks);
 	void						 parseClientMaxBodySizeDirective(ServerConfigBuilder& builder, std::vector<Tokenizer::Token>& toks);
 	void						 parseTimeOut(ServerConfigBuilder& builder, std::vector<Tokenizer::Token>& toks);
-	void						 parseDirectoryList(ServerConfigBuilder& builder, std::vector<Tokenizer::Token>& toks);
+	void						 parseAutoIndexDirective(ServerConfigBuilder& builder, std::vector<Tokenizer::Token>& toks);
 
 	void						 parseLocationBlock(ServerConfigBuilder& builder, std::vector<Tokenizer::Token>& toks);
 	void						 parseLocationItem(LocationConfigBuilder& builder, std::vector<Tokenizer::Token>& toks);

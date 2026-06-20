@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:47:26 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/19 01:05:42 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/20 08:01:45 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -126,8 +126,8 @@ void ConfigParser::parseServerItem(ServerConfigBuilder& builder, std::vector<Tok
 		parseClientMaxBodySizeDirective(builder, toks);
 	else if (first_eq("timeout", toks))
 		parseTimeOut(builder, toks);
-	else if (first_eq("directory_list", toks))
-		parseDirectoryList(builder, toks);
+	else if (first_eq("autoindex", toks))
+		parseAutoIndexDirective(builder, toks);
 	else if (toks.empty())
 		throw ConfigError("Unexpected end of file");
 	else
@@ -153,18 +153,18 @@ void ConfigParser::parseRootDirective(ServerConfigBuilder& builder, std::vector<
 	builder.setRootDir(consumeWordToken("root", toks));
 }
 
-void ConfigParser::parseDirectoryList(ServerConfigBuilder& builder, std::vector<Tokenizer::Token>& toks) {
-	consume_token("directory_list", toks);
-	if (first_eq("enable", toks)) {
-		consume_token("enable", toks);
-		builder.hasDirectoryList();
+void ConfigParser::parseAutoIndexDirective(ServerConfigBuilder& builder, std::vector<Tokenizer::Token>& toks) {
+	consume_token("autoindex", toks);
+	if (first_eq("on", toks)) {
+		consume_token("on", toks);
+		builder.autoIndexOn();
 		return;
-	} else if (first_eq("disable", toks)) {
-		consume_token("disable", toks);
-		builder.hasNotDirectoryList();
+	} else if (first_eq("off", toks)) {
+		consume_token("off", toks);
+		builder.autoIndexOff();
 		return;
 	}
-	throw ConfigError("incomplete directory_list directive");
+	throw ConfigError("incomplete autoindex directive");
 }
 
 void ConfigParser::parseIndexDirective(ServerConfigBuilder& builder, std::vector<Tokenizer::Token>& toks) {

@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:48:30 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/18 23:12:20 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/20 07:58:21 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -108,16 +108,16 @@ ServerConfigBuilder& ServerConfigBuilder::setTimeOut(size_t timeOut) {
 	return *this;
 }
 
-ServerConfigBuilder& ServerConfigBuilder::hasDirectoryList() {
+ServerConfigBuilder& ServerConfigBuilder::autoIndexOn() {
 	if (_hasDirectoryList != 0) // ) not init
-		throw ConfigError("Duplicate directory_list directive");
+		throw ConfigError("Duplicate autoindex directive");
 	_hasDirectoryList = 1; // has
 	return *this;
 }
 
-ServerConfigBuilder& ServerConfigBuilder::hasNotDirectoryList() {
+ServerConfigBuilder& ServerConfigBuilder::autoIndexOff() {
 	if (_hasDirectoryList != 0) // ) not init
-		throw ConfigError("Duplicate directory_list directive");
+		throw ConfigError("Duplicate autoindex directive");
 	_hasDirectoryList = 2; // has
 	return *this;
 }
