@@ -3,6 +3,7 @@
 1. Checking the value of errno to adjust the server behaviour is strictly forbidden
 1. Directory list
 1. Http Redirection
+1. Gestion des pages d'erreur
 
 
 ## Bonus

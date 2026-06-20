@@ -13,8 +13,8 @@
 #pragma once
 #ifndef CLIENT_HPP
 #define CLIENT_HPP
+#include "../cgi/CgiHandler.hpp"
 #include "../config/IServerConfig.hpp"
-#include "../handler/CgiHandler.hpp"
 #include "../handler/StaticFileHandler.hpp"
 #include "../http/HttpRequest.hpp"
 #include "../http/HttpResponse.hpp"

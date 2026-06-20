@@ -18,22 +18,37 @@
 #include <ctime>
 #include <sstream>
 
-CgiHandler::CgiHandler() {
+CgiHandler::CgiHandler() : cgipass(), input_fd(-1), output_fd(-1), _isfinished(false) {
 }
 
 CgiHandler::~CgiHandler() {
 }
 
-CgiHandler::CgiHandler(const CgiHandler& base) {
-	this->cgipass = base.cgipass;
+CgiHandler::CgiHandler(const CgiHandler& base) : cgipass(base.cgipass), input_fd(base.input_fd), output_fd(base.output_fd), _isfinished(base._isfinished) {
 }
 
 CgiHandler& CgiHandler::operator=(const CgiHandler& base) {
 	if (this == &base)
 		return *this;
+	this->cgipass	= base.cgipass;
+	this->input_fd	= base.input_fd;
+	this->output_fd = base.output_fd;
 	return (*this);
 }
 
+int CgiHandler::getInputFd() const {
+	return input_fd;
+}
+int CgiHandler::getOutputFd() const {
+	return output_fd;
+}
+bool CgiHandler::isFinished() const {
+	return _isfinished;
+}
+void CgiHandler::onInputWritable() {
+}
+void CgiHandler::onOutputWritable() {
+}
 std::string uri_decode(std::string uri) {
 	std::string out("");
 	for (std::string::iterator it = uri.begin(); it != uri.end(); ++it) {
@@ -243,8 +258,11 @@ bool CgiHandler::handle(const IHttpRequest& req, const ILocationConfig& loc, IHt
 	script_path = fstring.str();
 
 	if (access(script_path.c_str(), F_OK | X_OK) == -1) {
-		res.setStatus(500);
-		res.setBody("<h1>500 Internal Server Error</h1>");
+		std::cerr << "Script error : " << script_path;
+		std::cerr << "\n\tF_OK:" << access(script_path.c_str(), F_OK) << std::endl;
+		std::cerr << "\n\tX_OK:" << access(script_path.c_str(), X_OK) << std::endl;
+		res.setStatus(502);
+		res.setBody("<h1>502 Bad Gateway</h1>");
 		return true;
 	}
 	std::string cgi_script_name = req.getUri();
@@ -360,6 +378,7 @@ bool CgiHandler::handle(const IHttpRequest& req, const ILocationConfig& loc, IHt
 		return true;
 	}
 	if (!WIFEXITED(wstatus) || WEXITSTATUS(wstatus) != 0) {
+		std::cerr << "GATEWAY Non null exit status" << std::endl;
 		res.setStatus(502);
 		res.setBody("<h1>502 Bad Gateway</h1>");
 		return true;
