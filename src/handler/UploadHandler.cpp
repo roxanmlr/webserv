@@ -6,7 +6,7 @@
 /*   By: mzouhir <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/17 11:03:59 by mzouhir           #+#    #+#             */
-/*   Updated: 2026/06/17 14:56:44 by mzouhir          ###   ########.fr       */
+/*   Updated: 2026/06/20 16:24:41 by mzouhir          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,19 +39,21 @@ bool UploadHandler::canHandle(const IHttpRequest& req, const ILocationConfig& lo
 bool UploadHandler::handle(const IHttpRequest& req, const ILocationConfig& loc, IHttpResponse& res, IServerConfig const* serv) {
 	(void)serv;
 	std::string uri(req.getUri());
-	std::size_t pos = uri.rfind('/');
-	std::string fileName;
-	if (pos == std::string::npos)
-		fileName = uri;
-	else
-		fileName = uri.substr(pos + 1);
+	std::string locPath = loc.getPath();
 
-	if (fileName.empty()) {
-		res.setStatus(400);
-		res.setBody("<h1>400 Bad Request: Missing Filename</h1>");
-		return (true);
+	std::string fileName = "";
+	if (uri.length() >= locPath.length()) {
+		fileName = uri.substr(locPath.length());
 	}
 
+	while (!fileName.empty() && fileName[0] == '/')
+		fileName.erase(0, 1);
+
+	if (fileName.empty() || fileName.find("..") != std::string::npos) {
+		res.setStatus(400);
+		res.setBody("<h1>400 Bad Request: Invalid Filename</h1>");
+		return (true);
+	}
 	std::string path = loc.getUploadStore().get();
 	if (!path.empty() && path[path.length() - 1] != '/')
 		path += '/';

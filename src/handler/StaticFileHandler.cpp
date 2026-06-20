@@ -6,7 +6,7 @@
 /*   By: mzouhir <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/10 15:28:23 by mzouhir           #+#    #+#             */
-/*   Updated: 2026/06/19 17:00:39 by mzouhir          ###   ########.fr       */
+/*   Updated: 2026/06/20 17:18:50 by mzouhir          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 #include <fstream>
 #include <sstream>
 #include <sys/stat.h>
+#include "../http/HttpResponse.hpp"
 
 StaticFileHandler::StaticFileHandler() {
 }
@@ -81,7 +82,7 @@ bool StaticFileHandler::handle(const IHttpRequest& req, const ILocationConfig& l
 				return (true);
 			} else {
 				res.setStatus(403);
-				res.setBody("<h1>403 Forbidden</h1>");
+				HttpResponse::applyErrorPage(res, 403, serv);
 				return (true);
 			}
 		}
@@ -90,7 +91,7 @@ bool StaticFileHandler::handle(const IHttpRequest& req, const ILocationConfig& l
 	std::ifstream file(path.c_str());
 	if (!(file.is_open())) {
 		res.setStatus(404);
-		res.setBody("<h1>404 Not Found</h1>");
+		HttpResponse::applyErrorPage(res, 404, serv);
 		return (true);
 	}
 	std::stringstream ss;

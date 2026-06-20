@@ -3,15 +3,16 @@
 /*                                                        :::      ::::::::   */
 /*   HttpResponse.hpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mzouhir <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/08 18:05:03 by mzouhir           #+#    #+#             */
-/*   Updated: 2026/06/10 18:34:25 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/20 17:17:55 by mzouhir          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once
 
+#include "../config/IServerConfig.hpp"
 #include "IHttpResponse.hpp"
 #include <map>
 
@@ -32,4 +33,6 @@ public:
 	virtual void		setHeader(const std::string& name, const std::string& value);
 	virtual void		setBody(const std::string& body);
 	virtual std::string serialize() const;
+
+	static void			applyErrorPage(IHttpResponse& res, int statusCode, const IServerConfig* serv);
 };

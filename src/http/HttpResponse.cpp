@@ -3,14 +3,15 @@
 /*                                                        :::      ::::::::   */
 /*   HttpResponse.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mzouhir <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/08 18:05:05 by mzouhir           #+#    #+#             */
-/*   Updated: 2026/06/10 18:33:45 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/20 17:18:06 by mzouhir          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "HttpResponse.hpp"
+#include <fstream>
 #include <sstream>
 
 HttpResponse::~HttpResponse() {
@@ -110,4 +111,40 @@ std::string HttpResponse::serialize() const {
 	res += "\r\n";
 	res += this->_body;
 	return (res);
+}
+
+std::string intToString(int n) {
+	std::stringstream ss;
+	ss << n;
+	return (ss.str());
+}
+
+void HttpResponse::applyErrorPage(IHttpResponse& res, int statusCode, const IServerConfig* serv) {
+	if (!serv) {
+		res.setBody("<h1>" + intToString(statusCode) + " Error</h1>");
+	}
+
+	const std::vector<IServerConfig::ErrorPage>& pages	 = serv->getErrorPages();
+	std::string									 errPath = "";
+
+	for (std::vector<IServerConfig::ErrorPage>::const_iterator it = pages.begin(); it != pages.end(); ++it) {
+		for (std::vector<unsigned int>::const_iterator codeIt = it->codes.begin(); codeIt != it->codes.end(); ++codeIt) {
+			if (static_cast<int>(*codeIt) == statusCode) {
+				errPath = it->path;
+				break;
+			}
+		}
+	}
+
+	if (!errPath.empty() && !serv->getRootDir().empty()) {
+		std::string	  fullPath = serv->getRootDir().get() + errPath;
+		std::ifstream file(fullPath.c_str());
+		if (file.is_open()) {
+			std::stringstream ss;
+			ss << file.rdbuf();
+			res.setBody(ss.str());
+			return;
+		}
+	}
+	res.setBody("<h1>" + intToString(statusCode) + " Error</h1>");
 }

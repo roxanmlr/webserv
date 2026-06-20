@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mzouhir <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/01 20:23:52 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/20 08:41:49 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/20 14:58:46 by mzouhir          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 #define CLIENT_HPP
 #include "../config/IServerConfig.hpp"
 #include "../handler/CgiHandler.hpp"
+#include "../handler/DeleteHandler.hpp"
 #include "../handler/StaticFileHandler.hpp"
 #include "../http/HttpRequest.hpp"
 #include "../http/HttpResponse.hpp"
