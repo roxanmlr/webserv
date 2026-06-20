@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/01 20:23:45 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/20 08:22:55 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/20 08:41:31 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -90,15 +90,7 @@ void Client::onReadable() {
 			std::cerr << "READ CLOSED (EOF)" << std::endl;
 			break;
 		}
-		if (errno == EINTR)
-			continue;
-		if (errno == EAGAIN || errno == EWOULDBLOCK) {
-			read_status = READ_AGAIN;
-			std::cerr << "READ AGAIN (EAGAIN)" << std::endl;
-			break;
-		}
-		read_status = READ_ERROR;
-		std::cerr << "READ ERROR" << std::endl;
+		read_status = READ_AGAIN;
 		break;
 	}
 	if (!(read_buffer.empty())) {
@@ -211,13 +203,7 @@ void Client::onWritable() {
 			write_status = WRITE_AGAIN;
 			break;
 		}
-		if (errno == EINTR)
-			continue;
-		if (errno == EAGAIN || errno == EWOULDBLOCK) {
-			write_status = WRITE_AGAIN;
-			break;
-		}
-		write_status = WRITE_ERROR;
+		write_status = WRITE_AGAIN;
 		break;
 	}
 	if (write_pos == write_buffer.size()) {

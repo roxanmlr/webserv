@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/01 20:23:52 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/19 01:17:30 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/20 08:41:49 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,7 +21,6 @@
 #include "../http/IHttpRequest.hpp"
 #include "IClient.hpp"
 #include <ctime>
-#include <errno.h>
 #include <sys/socket.h>
 
 class Client : public IClient {
