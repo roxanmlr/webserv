@@ -30,5 +30,11 @@ public:
 	virtual bool   wantsRead() const							   = 0;
 	virtual bool   wantsWrite() const							   = 0;
 	virtual bool   shouldClose() const							   = 0;
+	virtual bool   shouldBeHandleByCGI()						   = 0;
+	virtual void   handleByCGI()								   = 0;
+	virtual void   getCgiFd(int& input, int& output)			   = 0;
+	virtual void   onCgiInput()									   = 0;
+	virtual void   onCgiOutput()								   = 0;
+	virtual bool   isCgiFinished()								   = 0;
 };
 #endif

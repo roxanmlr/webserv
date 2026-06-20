@@ -17,14 +17,14 @@
 
 Client::Client()
 	: fd(-1), state(INIT), serv(NULL), lastActivity(time(NULL)), read_status(READ_OK), read_buffer(""), write_status(WRITE_NOT_START), write_pos(0),
-	  write_buffer("") {
+	  write_buffer(""), cgiHandler(), cgi_status(NO_CGI), parse_state(IHttpRequest::INCOMPLETE) {
 
 	std::map<std::string, std::string> headers;
 }
 
 Client::Client(int fd, IServerConfig const* serv)
 	: fd(fd), state(INIT), serv(serv), lastActivity(time(NULL)), read_status(READ_OK), read_buffer(""), write_status(WRITE_NOT_START), write_pos(0),
-	  write_buffer("") {
+	  write_buffer(""), cgiHandler(), cgi_status(NO_CGI), parse_state(IHttpRequest::INCOMPLETE) {
 	std::map<std::string, std::string> headers;
 }
 
@@ -33,7 +33,8 @@ Client::~Client() {
 
 Client::Client(Client const& other)
 	: fd(other.fd), state(other.state), serv(other.serv), lastActivity(other.lastActivity), read_status(other.read_status), read_buffer(other.read_buffer),
-	  write_status(other.write_status), write_pos(other.write_pos), write_buffer(other.write_buffer) {
+	  write_status(other.write_status), write_pos(other.write_pos), write_buffer(other.write_buffer), cgiHandler(other.cgiHandler),
+	  cgi_status(other.cgi_status), parse_state(IHttpRequest::INCOMPLETE) {
 }
 
 Client& Client::operator=(Client const& other) {
@@ -94,7 +95,7 @@ void Client::onReadable() {
 		break;
 	}
 	if (!(read_buffer.empty())) {
-		IHttpRequest::ParseState parse_state = this->_request.feed(read_buffer.data(), read_buffer.size());
+		parse_state = this->_request.feed(read_buffer.data(), read_buffer.size());
 		if (parse_state == IHttpRequest::COMPLETE) {
 			std::cerr << "HTTP request parsed with success" << std::endl;
 			read_buffer.clear();
@@ -113,9 +114,9 @@ void Client::onReadable() {
 }
 
 void Client::onWritable() {
-	if (write_status == WRITE_NOT_START)
+	if (write_status == WRITE_NOT_START || cgi_status == CGI_RUNNING)
 		return;
-	while (write_pos == 0 && write_status == WRITE_READY) {
+	while (write_pos == 0 && write_status == WRITE_READY) { // TODO check if the CGI is not concerned
 		Optional<ILocationConfig const*> optLoc;
 		{
 			if (state == TIMEOUT) {
@@ -156,13 +157,9 @@ void Client::onWritable() {
 			StaticFileHandler staticFileHandler;
 			CgiHandler		  cgiHandler;
 			UploadHandler	  uploadHandler;
-			if (cgiHandler.canHandle(_request, *bestMatch)) {
-				if (!bestMatch->isMethodAllowed(_request.getMethod())) {
-					response.setStatus(405);
-					response.setBody("<h1>405 Method Not Allowed</h1>");
-					break;
-				}
-				cgiHandler.handle(_request, *bestMatch, response, serv);
+			if (cgiHandler.canHandle(_request, *bestMatch)) { // TODO check it up
+				if (cgi_status == NO_CGI)
+					return;
 				break;
 			}
 			if (staticFileHandler.canHandle(_request, *bestMatch)) {
@@ -188,7 +185,9 @@ void Client::onWritable() {
 			break;
 		}
 	}
-	if (write_status == WRITE_READY)
+	if (cgi_status == CGI_FINISHED)
+		cgiHandler.fillResponse(response);
+	if (write_status == WRITE_READY) // TODO check if the CGI is on and is finished
 		write_buffer = response.serialize();
 	while (write_pos < write_buffer.size()) {
 		const char* data = write_buffer.data() + write_pos;
@@ -245,7 +244,7 @@ bool Client::wantsWrite() const {
 }
 
 bool Client::shouldClose() const {
-	return !wantsRead() && !wantsWrite();
+	return !wantsRead() && !wantsWrite() && cgi_status != CGI_RUNNING;
 }
 
 void Client::setWriteBuffer(std::string const& write_buffer) {
@@ -265,4 +264,51 @@ bool Client::isTimeOut() {
 		}
 	}
 	return false;
+}
+
+bool Client::shouldBeHandleByCGI() {
+	if (parse_state != IHttpRequest::COMPLETE || cgi_status != NO_CGI)
+		return false;
+	Optional<ILocationConfig const*> optLoc = serv->matchLocation(_request.getUri());
+	if (optLoc.empty())
+		return false;
+	ILocationConfig const* bestMatch = optLoc.get();
+	return cgiHandler.canHandle(_request, *bestMatch);
+}
+
+void Client::handleByCGI() {
+	if (cgi_status == CGI_FINISHED)
+		return;
+	cgi_status								= CGI_RUNNING;
+	Optional<ILocationConfig const*> optLoc = serv->matchLocation(_request.getUri());
+	if (optLoc.empty())
+		return;
+	ILocationConfig const* bestMatch = optLoc.get();
+	if (!bestMatch->isMethodAllowed(_request.getMethod())) {
+		response.setStatus(405);
+		response.setBody("<h1>405 Method Not Allowed</h1>");
+		cgi_status = CGI_FINISHED;
+	}
+	if (!cgiHandler.handle(_request, *bestMatch, response, serv))
+		cgi_status = CGI_FINISHED;
+}
+
+void Client::getCgiFd(int& input, int& output) {
+	input  = cgiHandler.getInputFd();
+	output = cgiHandler.getOutputFd();
+}
+
+void Client::onCgiInput() {
+	cgiHandler.onInput();
+}
+
+void Client::onCgiOutput() {
+	cgiHandler.onOutput();
+}
+
+bool Client::isCgiFinished() {
+	if (cgiHandler.isFinished() && cgi_status != CGI_FINISHED){
+		cgi_status = CGI_FINISHED;
+	}
+	return cgi_status == CGI_FINISHED;
 }

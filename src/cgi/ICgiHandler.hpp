@@ -21,10 +21,11 @@ public:
 	}
 	virtual int	 getInputFd() const												= 0; // pipe vers STDIN du CGI
 	virtual int	 getOutputFd() const											= 0; // pipe vers STDOUT du CGI
-	virtual bool isFinished() const												= 0;
-	virtual void onInputWritable()												= 0; // appelé sur POLLOUT du pipe stdin
-	virtual void onOutputWritable()												= 0; // appelé sur POLLOUT du pipe stdout
+	virtual bool isFinished()													= 0;
+	virtual void onInput()														= 0; // appelé sur POLLOUT du pipe stdin
+	virtual void onOutput()														= 0; // appelé sur POLLOUT du pipe stdout
 	virtual bool canHandle(const IHttpRequest& req, const ILocationConfig& loc) = 0;
 	virtual bool handle(const IHttpRequest&, const ILocationConfig& loc, IHttpResponse& res, IServerConfig const* serv) = 0;
+	virtual void fillResponse(IHttpResponse& res)																		= 0;
 };
 #endif

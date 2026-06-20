@@ -12,7 +12,7 @@
 
 #include "WebServer.hpp"
 
-WebServer::WebServer() : listen_map(), _shouldClose(false) {
+WebServer::WebServer() : listen_map(), cgi_input_map(), cgi_output_map(), _shouldClose(false) {
 }
 
 WebServer::~WebServer() {
@@ -125,9 +125,39 @@ void WebServer::addClient(int epoll_fd, int server_fd) {
 
 void WebServer::serveClient(int epoll_fd, struct epoll_event events[MAX_EVENTS], int event_pos, int client_fd) {
 	IClient* client = client_map[client_fd];
+	// TODO check if a Cgi is running
+	if (client->shouldBeHandleByCGI()) {
+		client->handleByCGI();
+		int input  = -1;
+		int output = -1;
+		client->getCgiFd(input, output);
+		{
+			struct epoll_event ev_client;
+			std::memset(&ev_client, 0, sizeof(ev_client));
+			ev_client.events  = EPOLLOUT;
+			ev_client.data.fd = input;
+			if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, input, &ev_client) == -1) {
+				close(input);
+				return;
+			}
+			cgi_input_map[input] = client;
+		}
+		{
+			struct epoll_event ev_client;
+			std::memset(&ev_client, 0, sizeof(ev_client));
+			ev_client.events  = EPOLLIN;
+			ev_client.data.fd = output;
+			if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, output, &ev_client) == -1) {
+				close(input);
+				return;
+			}
+			cgi_output_map[output] = client;
+		}
+	}
 	if (events[event_pos].events & EPOLLIN) {
 		client->onReadable();
 	}
+	// TODO if parsing end check if it should be managed by a new CGI
 	if (events[event_pos].events & EPOLLOUT) {
 		client->onWritable();
 	}
@@ -203,8 +233,30 @@ void WebServer::run() {
 						std::cerr << "hi" << std::endl;
 						// throw WebServerError("recv");
 					}
+				} else if (cgi_input_map.count(fd) > 0) {
+					cgi_input_map[fd]->onCgiInput();
+				} else if (cgi_output_map.count(fd) > 0) {
+					cgi_output_map[fd]->onCgiOutput();
 				} else
 					serveClient(epoll_fd, events, i, fd);
+			}
+			for (std::map<int, IClient*>::iterator it = cgi_input_map.begin(); it != cgi_input_map.end(); ++it) {
+				if (cgi_input_map[it->first]->isCgiFinished()) {
+					close(it->first);
+					std::map<int, IClient*>::iterator delete_it = it;
+					it++;
+					cgi_input_map.erase(delete_it->first);
+					continue;
+				}
+			}
+			for (std::map<int, IClient*>::iterator it = cgi_output_map.begin(); it != cgi_output_map.end(); ++it) {
+				if (cgi_output_map[it->first]->isCgiFinished()) {
+					close(it->first);
+					std::map<int, IClient*>::iterator delete_it = it;
+					it++;
+					cgi_output_map.erase(delete_it->first);
+					continue;
+				}
 			}
 			for (std::map<int, IClient*>::iterator it = client_map.begin(); it != client_map.end();) {
 				IClient* c = it->second;
@@ -239,6 +291,14 @@ void WebServer::stop() {
 		close(it->first);
 		delete it->second;
 	}
+	for (std::map<int, IClient*>::iterator it = cgi_input_map.begin(); it != cgi_input_map.end(); ++it) {
+		close(it->first);
+	}
+	for (std::map<int, IClient*>::iterator it = cgi_output_map.begin(); it != cgi_output_map.end(); ++it) {
+		close(it->first);
+	}
+	cgi_input_map.clear();
+	cgi_output_map.clear();
 	listen_map.clear();
 	client_map.clear();
 }

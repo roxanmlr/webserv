@@ -23,6 +23,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <map>
+#include <set>
 #include <sys/epoll.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -40,6 +41,8 @@ private:
 	};
 	std::map<int, struct ListenConfig> listen_map;
 	std::map<int, IClient*>			   client_map;
+	std::map<int, IClient*>			   cgi_input_map;
+	std::map<int, IClient*>			   cgi_output_map;
 	bool							   _shouldClose;
 	int								   shutdown_fd;
 	void							   addClient(int epoll_fd, int server_fd);

@@ -46,6 +46,10 @@ private:
 	HttpResponse	 response;
 
 	HttpRequest		 _request;
+	CgiHandler		 cgiHandler;
+	enum CgiStatus { NO_CGI, CGI_RUNNING, CGI_FINISHED };
+	CgiStatus				 cgi_status;
+	IHttpRequest::ParseState parse_state;
 
 public:
 	Client();
@@ -63,5 +67,11 @@ public:
 	bool	wantsRead() const;
 	bool	wantsWrite() const;
 	bool	shouldClose() const;
+	bool	shouldBeHandleByCGI();
+	void	handleByCGI();
+	void	getCgiFd(int& input, int& output);
+	void	onCgiInput();
+	void	onCgiOutput();
+	bool	isCgiFinished();
 };
 #endif

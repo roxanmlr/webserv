@@ -18,37 +18,140 @@
 #include <ctime>
 #include <sstream>
 
-CgiHandler::CgiHandler() : cgipass(), input_fd(-1), output_fd(-1), _isfinished(false) {
+static void		   parse_cgi_response(const std::string& output, IHttpResponse& res);
+static std::string header_tocgi(const std::string& header);
+static char**	   build_cgi_env(const IHttpRequest& req, IServerConfig const* serv, const std::string& script_name);
+static void		   free_envp(char** envp);
+
+CgiHandler::CgiHandler()
+	: cgipass(), pid(-1), state(INIT), output(""), write_finished(false), bufwrite(NULL), bufwrite_pos(0), bufwrite_size(0), read_finished(false), serv(NULL),
+	  s_time(0) {
+	pipefd[0]  = -1;
+	pipefd[1]  = -1;
+	outfile[0] = -1;
+	outfile[1] = -1;
 }
 
 CgiHandler::~CgiHandler() {
+	delete bufwrite;
 }
 
-CgiHandler::CgiHandler(const CgiHandler& base) : cgipass(base.cgipass), input_fd(base.input_fd), output_fd(base.output_fd), _isfinished(base._isfinished) {
+CgiHandler::CgiHandler(const CgiHandler& base)
+	: cgipass(base.cgipass), pid(base.pid), state(base.state), output(base.output), write_finished(base.write_finished), bufwrite(base.bufwrite),
+	  bufwrite_pos(base.bufwrite_pos), bufwrite_size(base.bufwrite_size), read_finished(base.read_finished), serv(base.serv), s_time(base.s_time) {
+	pipefd[0]  = base.pipefd[0];
+	pipefd[1]  = base.pipefd[1];
+	outfile[0] = base.outfile[0];
+	outfile[1] = base.outfile[1];
 }
 
 CgiHandler& CgiHandler::operator=(const CgiHandler& base) {
 	if (this == &base)
 		return *this;
-	this->cgipass	= base.cgipass;
-	this->input_fd	= base.input_fd;
-	this->output_fd = base.output_fd;
+	this->cgipass = base.cgipass;
+	this->state	  = base.state;
+	this->output  = base.output;
+	this->pid	  = base.pid;
+	pipefd[0]	  = base.pipefd[0];
+	pipefd[1]	  = base.pipefd[1];
+	outfile[0]	  = base.outfile[0];
+	outfile[1]	  = base.outfile[1];
 	return (*this);
 }
 
 int CgiHandler::getInputFd() const {
-	return input_fd;
+	return pipefd[1];
 }
 int CgiHandler::getOutputFd() const {
-	return output_fd;
+	return outfile[0];
 }
-bool CgiHandler::isFinished() const {
-	return _isfinished;
+bool CgiHandler::isFinished() {
+	hasTimeOut();
+	int wstatus;
+	if (state != PROCESSING)
+		return state == ERROR || state == FINISHED || state == TIMEOUT;
+	int child_pid = waitpid(pid, &wstatus, WNOHANG);
+	if (child_pid == 0)
+		return false;
+	if (!WIFEXITED(wstatus) || WEXITSTATUS(wstatus) != 0) {
+		std::cerr << "GATEWAY Non null exit status" << std::endl;
+		state = ERROR;
+		return true;
+	}
+	state = PROCESS_END;
+	if (read_finished && write_finished)
+		state = FINISHED;
+	return state == FINISHED;
 }
-void CgiHandler::onInputWritable() {
+void CgiHandler::hasTimeOut() {
+	/*
+	if ((!serv->getTimeOut().empty() && static_cast<size_t>(difftime(time(NULL), s_time)) >= serv->getTimeOut().get()) ||
+		(serv->getTimeOut().empty() && difftime(time(NULL), s_time) >= TIME_OUT_CGI)) {
+		if (pid != -1) {
+			kill(pid, SIGKILL);
+			pid = -1;
+		}
+		state = TIMEOUT;
+	}*/
 }
-void CgiHandler::onOutputWritable() {
+void CgiHandler::onOutput() {
+	if (read_finished || isFinished())
+		return;
+	char bufread[BUFSIZ + 1];
+	bufread[BUFSIZ] = 0;
+	ssize_t readn	= read(outfile[0], bufread, BUFSIZ);
+	if (readn < 0 && !(errno == EAGAIN || errno == EWOULDBLOCK)) {
+		read_finished = true;
+		close(outfile[0]);
+		outfile[0] = -1;
+	} else if (readn >= 0) {
+		read_finished = readn == 0;
+		if (read_finished) {
+			close(outfile[0]);
+			outfile[0] = -1;
+		}
+		output.append(bufread, readn);
+	}
 }
+void CgiHandler::onInput() {
+	if (write_finished || isFinished())
+		return;
+	ssize_t written = write(pipefd[1], bufwrite + bufwrite_pos, bufwrite_size - bufwrite_pos);
+	if (written < 0 && !(errno == EAGAIN || errno == EWOULDBLOCK)) {
+		write_finished = true;
+		close(pipefd[1]);
+		pipefd[1] = -1;
+	} else if (written >= 0) {
+		bufwrite_pos += written;
+		write_finished = !(bufwrite_pos < bufwrite_size);
+		if (write_finished) {
+			close(pipefd[1]);
+			pipefd[1] = -1;
+		}
+	}
+}
+
+void CgiHandler::fillResponse(IHttpResponse& res) {
+	if (!isFinished())
+		return;
+	if (pipefd[1] != -1)
+		close(pipefd[1]);
+	if (outfile[0] != -1)
+		close(outfile[0]);
+
+	if (state == TIMEOUT) {
+		res.setStatus(504);
+		res.setBody("<h1>504 Gateway Timeout</h1>");
+		return;
+	}
+	if (state == ERROR) {
+		res.setStatus(502);
+		res.setBody("<h1>502 Bad Gateway</h1>");
+		return;
+	}
+	parse_cgi_response(output, res);
+}
+
 std::string uri_decode(std::string uri) {
 	std::string out("");
 	for (std::string::iterator it = uri.begin(); it != uri.end(); ++it) {
@@ -108,6 +211,90 @@ bool CgiHandler::canHandle(const IHttpRequest& req, const ILocationConfig& loc) 
 		}
 	}
 	return false;
+}
+
+bool CgiHandler::handle(const IHttpRequest& req, const ILocationConfig& loc, IHttpResponse& res, IServerConfig const* server) {
+	serv					= server;
+	std::string script_path = uri_decode(req.getUri());
+	std::size_t q			= script_path.find('?');
+	if (q != std::string::npos)
+		script_path = script_path.substr(0, q);
+	std::stringstream fstring;
+	if (!serv->getRootDir().empty())
+		fstring << serv->getRootDir().get();
+	if (!loc.getRoot().empty())
+		fstring << loc.getRoot().get();
+	fstring << script_path;
+	script_path = fstring.str();
+
+	if (access(script_path.c_str(), F_OK | X_OK) == -1) {
+		std::cerr << "Script error : " << script_path;
+		std::cerr << "\n\tF_OK:" << access(script_path.c_str(), F_OK) << std::endl;
+		std::cerr << "\n\tX_OK:" << access(script_path.c_str(), X_OK) << std::endl;
+		state = ERROR;
+		res.setStatus(502);
+		res.setBody("<h1>502 Bad Gateway</h1>");
+		return false;
+	}
+	std::string cgi_script_name = req.getUri();
+	std::size_t qs_pos			= cgi_script_name.find('?');
+	if (qs_pos != std::string::npos)
+		cgi_script_name = cgi_script_name.substr(0, qs_pos);
+
+	if (pipe(pipefd) == -1) {
+		state = ERROR;
+		throw WebServerError("pipe failure");
+	}
+	if (pipe(outfile) == -1) {
+		close(pipefd[0]);
+		close(pipefd[1]);
+		state = ERROR;
+		throw WebServerError("pipe failure");
+	}
+	int pid = fork();
+	if (pid == -1) {
+		close(pipefd[0]);
+		close(pipefd[1]);
+		state = ERROR;
+		throw WebServerError("fork failure");
+	}
+	if (!pid) {
+		close(pipefd[1]);
+		close(outfile[0]);
+		if (dup2(pipefd[0], STDIN_FILENO) == -1) {
+			close(pipefd[0]);
+			close(outfile[1]);
+			std::exit(EXIT_FAILURE);
+		}
+		if (dup2(outfile[1], STDOUT_FILENO) == -1) {
+			close(pipefd[0]);
+			close(outfile[1]);
+			std::exit(EXIT_FAILURE);
+		}
+		const char* path	= cgipass.interpreter.c_str();
+		char*		args[3] = {const_cast<char*>(path), const_cast<char*>(script_path.c_str()), NULL};
+		char**		envp	= build_cgi_env(req, serv, cgi_script_name);
+		if (!envp) {
+			close(pipefd[0]);
+			close(outfile[1]);
+			std::exit(EXIT_FAILURE);
+		}
+		execve(path, args, envp);
+		free_envp(envp);
+		std::exit(EXIT_FAILURE);
+	}
+	state  = PROCESSING;
+	s_time = time(NULL);
+	close(pipefd[0]);
+	close(outfile[1]);
+	set_nonblocking(pipefd[1]);
+	set_nonblocking(outfile[0]);
+	bufwrite	   = strdup(const_cast<char*>(req.getBody().c_str()));
+	bufwrite_size  = req.getBody().size();
+	bufwrite_pos   = 0;
+	write_finished = false;
+	read_finished  = false;
+	return true;
 }
 
 static std::string header_tocgi(const std::string& header) {
@@ -239,150 +426,4 @@ static char** build_cgi_env(const IHttpRequest& req, IServerConfig const* serv, 
 	}
 	envp[envvec.size()] = NULL;
 	return envp;
-}
-
-bool CgiHandler::handle(const IHttpRequest& req, const ILocationConfig& loc, IHttpResponse& res, IServerConfig const* serv) {
-	int			pipefd[2];
-	int			outfile[2];
-
-	std::string script_path = uri_decode(req.getUri());
-	std::size_t q			= script_path.find('?');
-	if (q != std::string::npos)
-		script_path = script_path.substr(0, q);
-	std::stringstream fstring;
-	if (!serv->getRootDir().empty())
-		fstring << serv->getRootDir().get();
-	if (!loc.getRoot().empty())
-		fstring << loc.getRoot().get();
-	fstring << script_path;
-	script_path = fstring.str();
-
-	if (access(script_path.c_str(), F_OK | X_OK) == -1) {
-		std::cerr << "Script error : " << script_path;
-		std::cerr << "\n\tF_OK:" << access(script_path.c_str(), F_OK) << std::endl;
-		std::cerr << "\n\tX_OK:" << access(script_path.c_str(), X_OK) << std::endl;
-		res.setStatus(502);
-		res.setBody("<h1>502 Bad Gateway</h1>");
-		return true;
-	}
-	std::string cgi_script_name = req.getUri();
-	std::size_t qs_pos			= cgi_script_name.find('?');
-	if (qs_pos != std::string::npos)
-		cgi_script_name = cgi_script_name.substr(0, qs_pos);
-
-	if (pipe(pipefd) == -1)
-		throw WebServerError("pipe failure");
-	if (pipe(outfile) == -1) {
-		close(pipefd[0]);
-		close(pipefd[1]);
-		throw WebServerError("pipe failure");
-	}
-	int pid = fork();
-	if (pid == -1) {
-		close(pipefd[0]);
-		close(pipefd[1]);
-		throw WebServerError("fork failure");
-	}
-	if (!pid) {
-		close(pipefd[1]);
-		close(outfile[0]);
-		if (dup2(pipefd[0], STDIN_FILENO) == -1) {
-			close(pipefd[0]);
-			close(outfile[1]);
-			std::exit(EXIT_FAILURE);
-		}
-		if (dup2(outfile[1], STDOUT_FILENO) == -1) {
-			close(pipefd[0]);
-			close(outfile[1]);
-			std::exit(EXIT_FAILURE);
-		}
-		const char* path	= cgipass.interpreter.c_str();
-		char*		args[3] = {const_cast<char*>(path), const_cast<char*>(script_path.c_str()), NULL};
-		char**		envp	= build_cgi_env(req, serv, cgi_script_name);
-		if (!envp) {
-			close(pipefd[0]);
-			close(outfile[1]);
-			std::exit(EXIT_FAILURE);
-		}
-		execve(path, args, envp);
-		free_envp(envp);
-		std::exit(EXIT_FAILURE);
-	}
-	close(pipefd[0]);
-	close(outfile[1]);
-
-	bool		timed_out = false;
-	std::string output;
-	{
-		char*  bufwrite = const_cast<char*>(req.getBody().c_str());
-		size_t size		= req.getBody().size();
-		size_t pos		= 0;
-		char   bufread[BUFSIZ + 1];
-		bufread[BUFSIZ]		= 0;
-		bool write_finished = false;
-		bool read_finished	= false;
-		set_nonblocking(pipefd[1]);
-		set_nonblocking(outfile[0]);
-		time_t s_time = time(NULL);
-		while (!write_finished || !read_finished) {
-			if ((!serv->getTimeOut().empty() && static_cast<size_t>(difftime(time(NULL), s_time)) >= serv->getTimeOut().get()) ||
-				(serv->getTimeOut().empty() && difftime(time(NULL), s_time) >= 30)) {
-				kill(pid, SIGKILL);
-				timed_out = true;
-				break;
-			}
-			if (!write_finished) {
-				ssize_t written = write(pipefd[1], bufwrite + pos, size - pos);
-				if (written < 0 && !(errno == EAGAIN || errno == EWOULDBLOCK)) {
-					write_finished = true;
-					close(pipefd[1]);
-					pipefd[1] = -1;
-				} else if (written >= 0) {
-					pos += written;
-					write_finished = !(pos < size);
-					if (write_finished) {
-						close(pipefd[1]);
-						pipefd[1] = -1;
-					}
-				}
-			}
-			if (!read_finished) {
-				ssize_t readn = read(outfile[0], bufread, BUFSIZ);
-				if (readn < 0 && !(errno == EAGAIN || errno == EWOULDBLOCK)) {
-					read_finished = true;
-					close(outfile[0]);
-					outfile[0] = -1;
-				} else if (readn >= 0) {
-					read_finished = readn == 0;
-					if (read_finished) {
-						close(outfile[0]);
-						outfile[0] = -1;
-					}
-					output.append(bufread, readn);
-				}
-			}
-		}
-	}
-
-	if (pipefd[1] != -1)
-		close(pipefd[1]);
-	if (outfile[0] != -1)
-		close(outfile[0]);
-
-	int wstatus;
-	waitpid(pid, &wstatus, 0);
-
-	if (timed_out) {
-		res.setStatus(504);
-		res.setBody("<h1>504 Gateway Timeout</h1>");
-		return true;
-	}
-	if (!WIFEXITED(wstatus) || WEXITSTATUS(wstatus) != 0) {
-		std::cerr << "GATEWAY Non null exit status" << std::endl;
-		res.setStatus(502);
-		res.setBody("<h1>502 Bad Gateway</h1>");
-		return true;
-	}
-	parse_cgi_response(output, res);
-	return true;
 }
