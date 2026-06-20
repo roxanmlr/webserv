@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/01 20:23:45 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/20 08:41:31 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/20 22:48:46 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -114,7 +114,9 @@ void Client::onReadable() {
 }
 
 void Client::onWritable() {
-	if (write_status == WRITE_NOT_START || cgi_status == CGI_RUNNING)
+	if (write_status == WRITE_NOT_START)
+		return;
+	if (cgi_status == CGI_RUNNING)
 		return;
 	while (write_pos == 0 && write_status == WRITE_READY) { // TODO check if the CGI is not concerned
 		Optional<ILocationConfig const*> optLoc;
@@ -277,7 +279,7 @@ bool Client::shouldBeHandleByCGI() {
 }
 
 void Client::handleByCGI() {
-	if (cgi_status == CGI_FINISHED)
+	if (cgi_status != NO_CGI)
 		return;
 	cgi_status								= CGI_RUNNING;
 	Optional<ILocationConfig const*> optLoc = serv->matchLocation(_request.getUri());
@@ -298,17 +300,18 @@ void Client::getCgiFd(int& input, int& output) {
 	output = cgiHandler.getOutputFd();
 }
 
-void Client::onCgiInput() {
-	cgiHandler.onInput();
+bool Client::onCgiInput() {
+	return cgiHandler.onInput();
 }
 
-void Client::onCgiOutput() {
-	cgiHandler.onOutput();
+bool Client::onCgiOutput() {
+	return cgiHandler.onOutput();
 }
 
 bool Client::isCgiFinished() {
-	if (cgiHandler.isFinished() && cgi_status != CGI_FINISHED){
+	if (cgiHandler.isFinished()) {
 		cgi_status = CGI_FINISHED;
+		return true;
 	}
-	return cgi_status == CGI_FINISHED;
+	return false;
 }

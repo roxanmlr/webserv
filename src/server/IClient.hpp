@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:49:22 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/19 01:17:04 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/20 22:36:45 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,8 +33,8 @@ public:
 	virtual bool   shouldBeHandleByCGI()						   = 0;
 	virtual void   handleByCGI()								   = 0;
 	virtual void   getCgiFd(int& input, int& output)			   = 0;
-	virtual void   onCgiInput()									   = 0;
-	virtual void   onCgiOutput()								   = 0;
+	virtual bool   onCgiInput()									   = 0;
+	virtual bool   onCgiOutput()								   = 0;
 	virtual bool   isCgiFinished()								   = 0;
 };
 #endif

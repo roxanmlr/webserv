@@ -26,6 +26,7 @@ private:
 	IServerConfig const* serv;
 	time_t				 s_time;
 	void				 hasTimeOut();
+	void				 closeFdOnError();
 
 public:
 	~CgiHandler();
@@ -38,7 +39,7 @@ public:
 	int			getInputFd() const;	 // pipe vers STDIN du CGI
 	int			getOutputFd() const; // pipe vers STDOUT du CGI
 	bool		isFinished();
-	void		onInput();	// appelé sur POLLOUT du pipe stdin
-	void		onOutput(); // appelé sur POLLOUT du pipe stdout
+	bool		onInput();	// appelé sur POLLOUT du pipe stdin
+	bool		onOutput(); // appelé sur POLLOUT du pipe stdout
 	void		fillResponse(IHttpResponse& res);
 };

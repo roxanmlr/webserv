@@ -33,7 +33,7 @@ CgiHandler::CgiHandler()
 }
 
 CgiHandler::~CgiHandler() {
-	delete bufwrite;
+	free(bufwrite);
 }
 
 CgiHandler::CgiHandler(const CgiHandler& base)
@@ -68,20 +68,39 @@ int CgiHandler::getOutputFd() const {
 bool CgiHandler::isFinished() {
 	hasTimeOut();
 	int wstatus;
-	if (state != PROCESSING)
-		return state == ERROR || state == FINISHED || state == TIMEOUT;
-	int child_pid = waitpid(pid, &wstatus, WNOHANG);
-	if (child_pid == 0)
-		return false;
-	if (!WIFEXITED(wstatus) || WEXITSTATUS(wstatus) != 0) {
-		std::cerr << "GATEWAY Non null exit status" << std::endl;
-		state = ERROR;
+	if (state == ERROR || state == FINISHED || state == TIMEOUT)
 		return true;
+
+	if (state == PROCESSING) {
+
+		int child_pid = waitpid(pid, &wstatus, WNOHANG);
+		if (child_pid == 0)
+			return false;
+		if (!WIFEXITED(wstatus) || WEXITSTATUS(wstatus) != 0) {
+			std::cerr << "GATEWAY Non null exit status" << std::endl;
+			state = ERROR;
+			pid	  = -1;
+			return true;
+		}
+		state = PROCESS_END;
 	}
-	state = PROCESS_END;
-	if (read_finished && write_finished)
+	if (read_finished && write_finished && state != PROCESSING)
 		state = FINISHED;
 	return state == FINISHED;
+}
+void CgiHandler::closeFdOnError() {
+	if (outfile[0] != -1) {
+		close(outfile[0]);
+		outfile[0] = -1;
+	}
+	if (pipefd[1] != -1) {
+		close(pipefd[1]);
+		pipefd[1] = -1;
+	}
+	if (pid != -1) {
+		kill(pid, SIGKILL);
+		pid = -1;
+	}
 }
 void CgiHandler::hasTimeOut() {
 	/*
@@ -94,16 +113,16 @@ void CgiHandler::hasTimeOut() {
 		state = TIMEOUT;
 	}*/
 }
-void CgiHandler::onOutput() {
-	if (read_finished || isFinished())
-		return;
+bool CgiHandler::onOutput() {
+	if (read_finished)
+		return true;
 	char bufread[BUFSIZ + 1];
 	bufread[BUFSIZ] = 0;
 	ssize_t readn	= read(outfile[0], bufread, BUFSIZ);
 	if (readn < 0 && !(errno == EAGAIN || errno == EWOULDBLOCK)) {
 		read_finished = true;
-		close(outfile[0]);
-		outfile[0] = -1;
+		state		  = ERROR;
+		closeFdOnError();
 	} else if (readn >= 0) {
 		read_finished = readn == 0;
 		if (read_finished) {
@@ -112,15 +131,16 @@ void CgiHandler::onOutput() {
 		}
 		output.append(bufread, readn);
 	}
+	return (isFinished() || read_finished);
 }
-void CgiHandler::onInput() {
-	if (write_finished || isFinished())
-		return;
+bool CgiHandler::onInput() {
+	if (write_finished)
+		return true;
 	ssize_t written = write(pipefd[1], bufwrite + bufwrite_pos, bufwrite_size - bufwrite_pos);
 	if (written < 0 && !(errno == EAGAIN || errno == EWOULDBLOCK)) {
 		write_finished = true;
-		close(pipefd[1]);
-		pipefd[1] = -1;
+		state		   = ERROR;
+		closeFdOnError();
 	} else if (written >= 0) {
 		bufwrite_pos += written;
 		write_finished = !(bufwrite_pos < bufwrite_size);
@@ -129,6 +149,7 @@ void CgiHandler::onInput() {
 			pipefd[1] = -1;
 		}
 	}
+	return (isFinished() || write_finished);
 }
 
 void CgiHandler::fillResponse(IHttpResponse& res) {
@@ -286,7 +307,9 @@ bool CgiHandler::handle(const IHttpRequest& req, const ILocationConfig& loc, IHt
 	state  = PROCESSING;
 	s_time = time(NULL);
 	close(pipefd[0]);
+	pipefd[0] = -1;
 	close(outfile[1]);
+	outfile[1] = -1;
 	set_nonblocking(pipefd[1]);
 	set_nonblocking(outfile[0]);
 	bufwrite	   = strdup(const_cast<char*>(req.getBody().c_str()));

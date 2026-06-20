@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/01 20:23:52 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/20 08:41:49 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/20 22:36:49 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -70,8 +70,8 @@ public:
 	bool	shouldBeHandleByCGI();
 	void	handleByCGI();
 	void	getCgiFd(int& input, int& output);
-	void	onCgiInput();
-	void	onCgiOutput();
+	bool	onCgiInput();
+	bool	onCgiOutput();
 	bool	isCgiFinished();
 };
 #endif

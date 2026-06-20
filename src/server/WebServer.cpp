@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:49:36 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/20 08:25:18 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/20 22:52:05 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -208,6 +208,7 @@ void WebServer::run() {
 			}
 		}
 		std::cerr << "Shutdown properly with : \n\t echo \"stop\" | nc -uU " << CLOSE_SOCKET_PATH << std::endl;
+		std::set<IClient*> client_cgi_monitor;
 		for (;;) {
 			int n_events = epoll_wait(epoll_fd, events, MAX_EVENTS, 100);
 			if (n_events == -1) {
@@ -234,30 +235,28 @@ void WebServer::run() {
 						// throw WebServerError("recv");
 					}
 				} else if (cgi_input_map.count(fd) > 0) {
-					cgi_input_map[fd]->onCgiInput();
+					if (cgi_input_map[fd]->onCgiInput()) {
+						client_cgi_monitor.insert(cgi_input_map[fd]);
+						cgi_input_map.erase(fd);
+					}
 				} else if (cgi_output_map.count(fd) > 0) {
-					cgi_output_map[fd]->onCgiOutput();
+					if(cgi_output_map[fd]->onCgiOutput()){
+						client_cgi_monitor.insert(cgi_output_map[fd]);
+						cgi_output_map.erase(fd);
+					}
 				} else
 					serveClient(epoll_fd, events, i, fd);
 			}
-			for (std::map<int, IClient*>::iterator it = cgi_input_map.begin(); it != cgi_input_map.end(); ++it) {
-				if (cgi_input_map[it->first]->isCgiFinished()) {
-					close(it->first);
-					std::map<int, IClient*>::iterator delete_it = it;
+			for(std::set<IClient*>::iterator it = client_cgi_monitor.begin();it != client_cgi_monitor.end();){
+				if ((*it)->isCgiFinished()){
+					std::set<IClient*>::iterator d = it;
 					it++;
-					cgi_input_map.erase(delete_it->first);
+					client_cgi_monitor.erase(d);
 					continue;
 				}
+				it++;
 			}
-			for (std::map<int, IClient*>::iterator it = cgi_output_map.begin(); it != cgi_output_map.end(); ++it) {
-				if (cgi_output_map[it->first]->isCgiFinished()) {
-					close(it->first);
-					std::map<int, IClient*>::iterator delete_it = it;
-					it++;
-					cgi_output_map.erase(delete_it->first);
-					continue;
-				}
-			}
+
 			for (std::map<int, IClient*>::iterator it = client_map.begin(); it != client_map.end();) {
 				IClient* c = it->second;
 				if (c && c->isTimeOut()) {
