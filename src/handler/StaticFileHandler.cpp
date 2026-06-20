@@ -11,9 +11,9 @@
 /* ************************************************************************** */
 
 #include "StaticFileHandler.hpp"
+#include <dirent.h>
 #include <fstream>
 #include <sstream>
-#include <dirent.h>
 #include <sys/stat.h>
 
 StaticFileHandler::StaticFileHandler() {
@@ -75,21 +75,16 @@ bool StaticFileHandler::handle(const IHttpRequest& req, const ILocationConfig& l
 				}
 			}
 		}
-		if (!indexFound)
-		{
-			if (serv->hasDirectoryList())
-			{
+		if (!indexFound) {
+			if (serv->hasDirectoryList()) {
 				generateDirectoryListing(path, req.getUri(), res);
 				return (true);
-			}
-			else
-			{
+			} else {
 				res.setStatus(403);
 				res.setBody("<h1>403 Forbidden</h1>");
 				return (true);
 			}
 		}
-
 	}
 	// now we have to construct de response by opening the file found
 	std::ifstream file(path.c_str());
@@ -105,29 +100,26 @@ bool StaticFileHandler::handle(const IHttpRequest& req, const ILocationConfig& l
 	return (true);
 }
 
-void StaticFileHandler::generateDirectoryListing(const std::string & path, const std::string & uri, IHttpResponse & res)
-{
+void StaticFileHandler::generateDirectoryListing(const std::string& path, const std::string& uri, IHttpResponse& res) {
 	DIR* dir = opendir(path.c_str());
-	if (!dir)
-	{
+	if (!dir) {
 		res.setStatus(403);
 		res.setBody("<h1>403 Forbidden</h1>");
-		return ;
+		return;
 	}
 
 	std::stringstream ss;
 	ss << "<html><head><title>Index of " << uri << "</title></head><body>";
 	ss << "<h1>Index of " << uri << "</h1><hr><pre>";
 	struct dirent* entry;
-	while ((entry = readdir(dir)) != NULL)
-	{
+	while ((entry = readdir(dir)) != NULL) {
 		std::string name = entry->d_name;
 		if (name == ".")
 			continue;
 		std::string link = name;
 
 		if (entry->d_type == DT_DIR)
-			link+= "/";
+			link += "/";
 		ss << "<a href=\"" << link << "\">" << link << "</a><br>";
 	}
 	ss << "</pre><hr></body></html>";

@@ -44,7 +44,6 @@ public:
 	virtual bool								 matchesServerName(const std::string& name) const = 0;
 	virtual Optional<ILocationConfig const*>	 matchLocation(const std::string& uri) const	  = 0;
 	virtual bool								 hasDirectoryList() const						  = 0;
-
 };
 
 std::ostream& operator<<(std::ostream& out, IServerConfig const& srv);

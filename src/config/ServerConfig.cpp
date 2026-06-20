@@ -14,7 +14,9 @@
 #include "ILocationConfig.hpp"
 #include <sstream>
 
-ServerConfig::ServerConfig() : listen_addresses(), server_names(), root_dir(), indexes(), error_pages(), location_configs(), client_max_body_size(), timeOut(),_hasDirectoryList(false) {
+ServerConfig::ServerConfig()
+	: listen_addresses(), server_names(), root_dir(), indexes(), error_pages(), location_configs(), client_max_body_size(), timeOut(),
+	  _hasDirectoryList(false) {
 }
 
 ServerConfig::ServerConfig(std::vector<IServerConfig::ListenAddress> listen_addresses, std::vector<std::string> server_names, Optional<std::string> root_dir,
@@ -39,12 +41,12 @@ ServerConfig::ServerConfig(ServerConfig const& other)
 ServerConfig& ServerConfig::operator=(ServerConfig const& other) {
 	if (this == &other)
 		return *this;
-	this->listen_addresses = other.listen_addresses;
-	this->server_names	   = other.server_names;
-	this->root_dir		   = other.root_dir;
-	this->indexes		   = other.indexes;
-	this->error_pages	   = other.error_pages;
-	this->timeOut		   = other.timeOut;
+	this->listen_addresses	= other.listen_addresses;
+	this->server_names		= other.server_names;
+	this->root_dir			= other.root_dir;
+	this->indexes			= other.indexes;
+	this->error_pages		= other.error_pages;
+	this->timeOut			= other.timeOut;
 	this->_hasDirectoryList = other._hasDirectoryList;
 	for (std::vector<ILocationConfig*>::iterator it = location_configs.begin(); it != location_configs.end(); ++it)
 		delete *it;

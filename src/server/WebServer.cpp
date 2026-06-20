@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:49:36 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/19 01:48:00 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/20 08:25:18 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -136,17 +136,17 @@ void WebServer::serveClient(int epoll_fd, struct epoll_event events[MAX_EVENTS],
 		close(client_fd);
 		delete client_map[client_fd];
 		client_map.erase(client_fd);
-	} else {
-		struct epoll_event ev;
-		std::memset(&ev, 0, sizeof(ev));
-		ev.data.fd = client->getFd();
-		ev.events  = 0;
-		if (client->wantsRead())
-			ev.events |= EPOLLIN;
-		if (client->wantsWrite())
-			ev.events |= EPOLLOUT;
-		epoll_ctl(epoll_fd, EPOLL_CTL_MOD, client->getFd(), &ev);
+		return;
 	}
+	struct epoll_event ev;
+	std::memset(&ev, 0, sizeof(ev));
+	ev.data.fd = client->getFd();
+	ev.events  = 0;
+	if (client->wantsRead())
+		ev.events |= EPOLLIN;
+	if (client->wantsWrite())
+		ev.events |= EPOLLOUT;
+	epoll_ctl(epoll_fd, EPOLL_CTL_MOD, client->getFd(), &ev);
 }
 
 void WebServer::run() {

@@ -16,7 +16,8 @@
 
 class StaticFileHandler : public IRequestHandler {
 private:
-	void generateDirectoryListing(const std::string & path, const std::string & uri, IHttpResponse & res);
+	void generateDirectoryListing(const std::string& path, const std::string& uri, IHttpResponse& res);
+
 public:
 	virtual ~StaticFileHandler();
 	StaticFileHandler();

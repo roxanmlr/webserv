@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/01 20:23:45 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/19 01:22:34 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/20 08:22:55 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -107,7 +107,7 @@ void Client::onReadable() {
 			std::cerr << "HTTP request parsed with success" << std::endl;
 			read_buffer.clear();
 			read_buffer		   = this->_request.getBuffer();
-			this->state		   = PROCESSING;
+			this->state		   = WRITING;
 			this->write_status = WRITE_READY;
 		} else if (parse_state == IHttpRequest::PARSE_ERROR) {
 			std::cerr << "HTTP request error 400(bad request)" << std::endl;
@@ -218,18 +218,18 @@ void Client::onWritable() {
 			break;
 		}
 		write_status = WRITE_ERROR;
-		write_pos	 = 0;
-		write_buffer.clear();
 		break;
-		if (write_status != WRITE_ERROR && write_pos == write_buffer.size()) {
-			write_buffer.clear();
-			write_pos	 = 0;
-			write_status = WRITE_DONE;
-		}
+	}
+	if (write_pos == write_buffer.size()) {
+		write_buffer.clear();
+		write_pos	 = 0;
+		write_status = (write_status != WRITE_ERROR) ? WRITE_DONE : WRITE_ERROR;
 	}
 }
 
 bool Client::wantsRead() const {
+	if (state == WRITING || state == PARSE_ERROR)
+		return false;
 	switch (read_status) {
 	case READ_OK:
 	case READ_AGAIN:
@@ -246,9 +246,7 @@ bool Client::wantsWrite() const {
 	switch (write_status) {
 	case WRITE_READY:
 		return true;
-		return true;
 	case WRITE_NOT_START:
-		return false;
 		return false;
 	case WRITE_OK:
 	case WRITE_AGAIN:
