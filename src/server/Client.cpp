@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/01 20:23:45 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/20 22:48:46 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/21 08:47:08 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -118,7 +118,8 @@ void Client::onWritable() {
 		return;
 	if (cgi_status == CGI_RUNNING)
 		return;
-	while (write_pos == 0 && write_status == WRITE_READY) { // TODO check if the CGI is not concerned
+	std::cerr << "Client on Writable pass CGI\n";
+	while (write_pos == 0 && write_status == WRITE_READY && cgi_status == NO_CGI) { // TODO check if the CGI is not concerned
 		Optional<ILocationConfig const*> optLoc;
 		{
 			if (state == TIMEOUT) {
@@ -187,13 +188,12 @@ void Client::onWritable() {
 			break;
 		}
 	}
-	if (cgi_status == CGI_FINISHED)
-		cgiHandler.fillResponse(response);
 	if (write_status == WRITE_READY) // TODO check if the CGI is on and is finished
 		write_buffer = response.serialize();
 	while (write_pos < write_buffer.size()) {
 		const char* data = write_buffer.data() + write_pos;
 		size_t		size = write_buffer.size() - write_pos;
+		std::cerr << "Sending\n\t" << data << "\n";
 		ssize_t		n	 = send(fd, data, size, MSG_NOSIGNAL);
 		if (n > 0) {
 			write_pos += n;
@@ -269,30 +269,48 @@ bool Client::isTimeOut() {
 }
 
 bool Client::shouldBeHandleByCGI() {
-	if (parse_state != IHttpRequest::COMPLETE || cgi_status != NO_CGI)
+	if (cgi_status != NO_CGI){
 		return false;
+	}
+	std::cerr << "Test si la requete peut etre gere par CGI\n";
+	if (parse_state != IHttpRequest::COMPLETE ){
+		std::cerr << "Parsing incomplet\n";
+		return false;
+	}
 	Optional<ILocationConfig const*> optLoc = serv->matchLocation(_request.getUri());
 	if (optLoc.empty())
 		return false;
 	ILocationConfig const* bestMatch = optLoc.get();
-	return cgiHandler.canHandle(_request, *bestMatch);
+	if(cgiHandler.canHandle(_request, *bestMatch)){
+		std::cerr << "La requête doit être geree par CGI\n";
+		return true;
+	}
+	std::cerr << "La requête ne doit pas être geree par CGI\n";
+	return false;
 }
 
 void Client::handleByCGI() {
-	if (cgi_status != NO_CGI)
-		return;
+	if (cgi_status != NO_CGI){
+		std::cerr << "Requete deja gere\n";
+		exit(1);
+	}
+	std::cerr << "Lancement du CGI\n";
 	cgi_status								= CGI_RUNNING;
 	Optional<ILocationConfig const*> optLoc = serv->matchLocation(_request.getUri());
 	if (optLoc.empty())
 		return;
 	ILocationConfig const* bestMatch = optLoc.get();
 	if (!bestMatch->isMethodAllowed(_request.getMethod())) {
+		std::cerr << "Method not allowed fin du CGI\n";
 		response.setStatus(405);
 		response.setBody("<h1>405 Method Not Allowed</h1>");
 		cgi_status = CGI_FINISHED;
 	}
-	if (!cgiHandler.handle(_request, *bestMatch, response, serv))
+	if (!cgiHandler.handle(_request, *bestMatch, response, serv)){
+		std::cerr << "Echec du lancement du CGI\n";
 		cgi_status = CGI_FINISHED;
+	}
+	std::cerr << "Fin lancement CGI\n";
 }
 
 void Client::getCgiFd(int& input, int& output) {
@@ -310,6 +328,9 @@ bool Client::onCgiOutput() {
 
 bool Client::isCgiFinished() {
 	if (cgiHandler.isFinished()) {
+		std::cerr << "CGI Ended\n";
+		cgiHandler.fillResponse(response);
+		std::cerr << response.serialize() << "\n";
 		cgi_status = CGI_FINISHED;
 		return true;
 	}

@@ -66,40 +66,52 @@ int CgiHandler::getOutputFd() const {
 	return outfile[0];
 }
 bool CgiHandler::isFinished() {
+	std::cerr << "Test fin CGI\n";
 	hasTimeOut();
-	int wstatus;
-	if (state == ERROR || state == FINISHED || state == TIMEOUT)
+	if (state == ERROR || state == FINISHED || state == TIMEOUT){
+		std::cerr << "CGI deja terminé\n";
 		return true;
+	}
 
 	if (state == PROCESSING) {
-
+	int wstatus;
 		int child_pid = waitpid(pid, &wstatus, WNOHANG);
-		if (child_pid == 0)
+		if (child_pid == 0){
+			std::cerr << "Client runninng\n";
 			return false;
+		}
 		if (!WIFEXITED(wstatus) || WEXITSTATUS(wstatus) != 0) {
 			std::cerr << "GATEWAY Non null exit status" << std::endl;
 			state = ERROR;
 			pid	  = -1;
 			return true;
 		}
+		std::cerr << "Client terminé\n";
 		state = PROCESS_END;
 	}
-	if (read_finished && write_finished && state != PROCESSING)
+	if (read_finished && write_finished){
 		state = FINISHED;
-	return state == FINISHED;
+		std::cerr << "CGI terminé\n";
+		return true;
+	}
+	std::cerr << "CGI continue\n";
+	return false;
 }
 void CgiHandler::closeFdOnError() {
 	if (outfile[0] != -1) {
 		close(outfile[0]);
 		outfile[0] = -1;
+		std::cerr << "Fermeture de la sortie outfile[0] du CGI\n";
 	}
 	if (pipefd[1] != -1) {
 		close(pipefd[1]);
 		pipefd[1] = -1;
+		std::cerr << "Fermeture de l'entree pipefd[1] du CGI\n";
 	}
 	if (pid != -1) {
 		kill(pid, SIGKILL);
 		pid = -1;
+		std::cerr << "Le Client a été SIGKILL\n";
 	}
 }
 void CgiHandler::hasTimeOut() {
@@ -114,32 +126,41 @@ void CgiHandler::hasTimeOut() {
 	}*/
 }
 bool CgiHandler::onOutput() {
-	if (read_finished)
+	std::cerr << "Host reading from client\n";
+	if (read_finished){
+		std::cerr << "Host reading deja terminé\n";
 		return true;
+	}
 	char bufread[BUFSIZ + 1];
 	bufread[BUFSIZ] = 0;
 	ssize_t readn	= read(outfile[0], bufread, BUFSIZ);
 	if (readn < 0 && !(errno == EAGAIN || errno == EWOULDBLOCK)) {
 		read_finished = true;
 		state		  = ERROR;
+		std::cerr << "Host reading terminé suite à erreur\n";
 		closeFdOnError();
 	} else if (readn >= 0) {
 		read_finished = readn == 0;
 		if (read_finished) {
 			close(outfile[0]);
 			outfile[0] = -1;
+			std::cerr << "Host reading terminé proprement\n";
 		}
 		output.append(bufread, readn);
 	}
-	return (isFinished() || read_finished);
+	return read_finished;
 }
 bool CgiHandler::onInput() {
-	if (write_finished)
-		return true;
+	std::cerr << "Host writing to client\n";
+	if (write_finished){
+		std::cerr << "Host writing deja terminé\n";
+		return true;	
+	}
 	ssize_t written = write(pipefd[1], bufwrite + bufwrite_pos, bufwrite_size - bufwrite_pos);
 	if (written < 0 && !(errno == EAGAIN || errno == EWOULDBLOCK)) {
 		write_finished = true;
 		state		   = ERROR;
+		std::cerr << "Host writing terminé suite à erreur\n";
 		closeFdOnError();
 	} else if (written >= 0) {
 		bufwrite_pos += written;
@@ -147,9 +168,19 @@ bool CgiHandler::onInput() {
 		if (write_finished) {
 			close(pipefd[1]);
 			pipefd[1] = -1;
+			std::cerr << "Host writing terminé proprement\n";
 		}
 	}
-	return (isFinished() || write_finished);
+	if (isFinished()){
+		std::cerr << "Programme terminé\n";
+		write_finished = true;
+		close(pipefd[1]);
+		pipefd[1] = -1;
+		std::cerr << "Fermeture de Host writing\n";
+		return true;
+	}
+	std::cerr << "Host writing continue";
+	return false;
 }
 
 void CgiHandler::fillResponse(IHttpResponse& res) {
@@ -317,6 +348,7 @@ bool CgiHandler::handle(const IHttpRequest& req, const ILocationConfig& loc, IHt
 	bufwrite_pos   = 0;
 	write_finished = false;
 	read_finished  = false;
+	std::cerr << "CGI Lancé\n";
 	return true;
 }
 

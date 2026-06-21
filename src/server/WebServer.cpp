@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:49:36 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/20 22:52:05 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/21 08:39:11 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -124,9 +124,14 @@ void WebServer::addClient(int epoll_fd, int server_fd) {
 }
 
 void WebServer::serveClient(int epoll_fd, struct epoll_event events[MAX_EVENTS], int event_pos, int client_fd) {
+	static int is_cgi_launched = 0;
 	IClient* client = client_map[client_fd];
+	if (!client){
+		std::cerr << "Null client\n";
+		return ;
+	}
 	// TODO check if a Cgi is running
-	if (client->shouldBeHandleByCGI()) {
+	if (client && client->shouldBeHandleByCGI()) {
 		client->handleByCGI();
 		int input  = -1;
 		int output = -1;
@@ -153,11 +158,23 @@ void WebServer::serveClient(int epoll_fd, struct epoll_event events[MAX_EVENTS],
 			}
 			cgi_output_map[output] = client;
 		}
+		is_cgi_launched = 1;
+		return ;
+	}
+	if (is_cgi_launched == 1){
+		std::cerr << "Client continue past CGI\n";
+		is_cgi_launched = 2;
 	}
 	if (events[event_pos].events & EPOLLIN) {
 		client->onReadable();
 	}
 	// TODO if parsing end check if it should be managed by a new CGI
+	if (client->isCgiFinished()){
+		if (is_cgi_launched == 2){
+			std::cerr << "CGI Finished\n";
+			is_cgi_launched = 3;
+		}
+	}
 	if (events[event_pos].events & EPOLLOUT) {
 		client->onWritable();
 	}
@@ -235,16 +252,22 @@ void WebServer::run() {
 						// throw WebServerError("recv");
 					}
 				} else if (cgi_input_map.count(fd) > 0) {
+					std::cerr << "Reveil du CGI Input\n";
 					if (cgi_input_map[fd]->onCgiInput()) {
+						std::cerr << "suppression du CGI Input\n";
 						client_cgi_monitor.insert(cgi_input_map[fd]);
 						cgi_input_map.erase(fd);
 					}
+					std::cerr << "Fin Reveil du CGI Input\n";
 				} else if (cgi_output_map.count(fd) > 0) {
+					std::cerr << "Reveil du CGI Output\n";
 					if(cgi_output_map[fd]->onCgiOutput()){
+						std::cerr << "suppression du CGI Output\n";
 						client_cgi_monitor.insert(cgi_output_map[fd]);
 						cgi_output_map.erase(fd);
 					}
-				} else
+					std::cerr << "Fin Reveil du CGI Output\n";
+				} else if (client_map.count(fd) > 0)
 					serveClient(epoll_fd, events, i, fd);
 			}
 			for(std::set<IClient*>::iterator it = client_cgi_monitor.begin();it != client_cgi_monitor.end();){
