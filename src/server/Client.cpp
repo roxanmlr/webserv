@@ -3,10 +3,14 @@
 /*                                                        :::      ::::::::   */
 /*   Client.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
+/*   By: mzouhir <marvin@42.fr>                     +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/01 20:23:45 by lmilando          #+#    #+#             */
+<<<<<<< HEAD
 /*   Updated: 2026/06/21 08:47:08 by lmilando         ###   ########.fr       */
+=======
+/*   Updated: 2026/06/20 17:05:52 by mzouhir          ###   ########.fr       */
+>>>>>>> dev/newmzouhir
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -125,33 +129,33 @@ void Client::onWritable() {
 			if (state == TIMEOUT) {
 				response.setStatus(408);
 				response.setHeader("Connection", "close");
-				response.setBody("<h1>408 Request Timeout</>");
+				HttpResponse::applyErrorPage(response, 408, serv);
 				break;
 			}
 			if (state == PARSE_ERROR) {
 				response.setStatus(400);
-				response.setBody("<h1>Bad request</h1>");
+				HttpResponse::applyErrorPage(response, 400, serv);
 				break;
 			}
 			if (read_status == READ_OVERFLOW) {
 				response.setStatus(413);
-				response.setBody("<h1>Payload Too Large</h1>");
+				HttpResponse::applyErrorPage(response, 413, serv);
 				break;
 			}
 			if (read_status == READ_ERROR) {
 				response.setStatus(400);
-				response.setBody("<h1>400 Bad Request</h1>");
+				HttpResponse::applyErrorPage(response, 400, serv);
 				break;
 			}
 			if (!serv) {
 				response.setStatus(500);
-				response.setBody("<h1>500 Internal Server error</h1>");
+				HttpResponse::applyErrorPage(response, 500, serv);
 				break;
 			}
 			optLoc = serv->matchLocation(_request.getUri());
 			if (optLoc.empty()) {
 				response.setStatus(404);
-				response.setBody("<h1>404 Not Found</h1>");
+				HttpResponse::applyErrorPage(response, 404, serv);
 				break;
 			}
 		}
@@ -160,15 +164,35 @@ void Client::onWritable() {
 			StaticFileHandler staticFileHandler;
 			CgiHandler		  cgiHandler;
 			UploadHandler	  uploadHandler;
+<<<<<<< HEAD
 			if (cgiHandler.canHandle(_request, *bestMatch)) { // TODO check it up
 				if (cgi_status == NO_CGI)
 					return;
+=======
+			DeleteHandler	  deleteHandler;
+			if (cgiHandler.canHandle(_request, *bestMatch)) {
+				if (!bestMatch->isMethodAllowed(_request.getMethod())) {
+					response.setStatus(405);
+					HttpResponse::applyErrorPage(response, 405, serv);
+					break;
+				}
+				cgiHandler.handle(_request, *bestMatch, response, serv);
+>>>>>>> dev/newmzouhir
+				break;
+			}
+			if (deleteHandler.canHandle(_request, *bestMatch)) {
+				if (!bestMatch->isMethodAllowed(_request.getMethod())) {
+					response.setStatus(405);
+					HttpResponse::applyErrorPage(response, 405, serv);
+					break;
+				}
+				deleteHandler.handle(_request, *bestMatch, response, serv);
 				break;
 			}
 			if (staticFileHandler.canHandle(_request, *bestMatch)) {
 				if (!bestMatch->isMethodAllowed(_request.getMethod())) {
 					response.setStatus(405);
-					response.setBody("<h1>405 Method Not Allowed</h1>");
+					HttpResponse::applyErrorPage(response, 405, serv);
 					break;
 				}
 				staticFileHandler.handle(_request, *bestMatch, response, serv);
@@ -177,14 +201,14 @@ void Client::onWritable() {
 			if (uploadHandler.canHandle(_request, *bestMatch)) {
 				if (!bestMatch->isMethodAllowed(_request.getMethod())) {
 					response.setStatus(405);
-					response.setBody("<h1>405 Method Not Allowed</h1>");
+					HttpResponse::applyErrorPage(response, 405, serv);
 					break;
 				}
 				uploadHandler.handle(_request, *bestMatch, response, serv);
 				break;
 			}
 			response.setStatus(405);
-			response.setBody("<h1>405 Method not allowed (No handler found)</h1>");
+			HttpResponse::applyErrorPage(response, 405, serv);
 			break;
 		}
 	}
@@ -267,6 +291,7 @@ bool Client::isTimeOut() {
 	}
 	return false;
 }
+<<<<<<< HEAD
 
 bool Client::shouldBeHandleByCGI() {
 	if (cgi_status != NO_CGI) {
@@ -336,3 +361,5 @@ bool Client::isCgiFinished() {
 	}
 	return false;
 }
+=======
+>>>>>>> dev/newmzouhir
