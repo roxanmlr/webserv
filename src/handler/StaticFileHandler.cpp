@@ -11,11 +11,11 @@
 /* ************************************************************************** */
 
 #include "StaticFileHandler.hpp"
+#include "../http/HttpResponse.hpp"
 #include <dirent.h>
 #include <fstream>
 #include <sstream>
 #include <sys/stat.h>
-#include "../http/HttpResponse.hpp"
 
 StaticFileHandler::StaticFileHandler() {
 }

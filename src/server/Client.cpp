@@ -3,14 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mzouhir <marvin@42.fr>                     +#+  +:+       +#+        */
+/*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/01 20:23:45 by lmilando          #+#    #+#             */
-<<<<<<< HEAD
-/*   Updated: 2026/06/21 08:47:08 by lmilando         ###   ########.fr       */
-=======
-/*   Updated: 2026/06/20 17:05:52 by mzouhir          ###   ########.fr       */
->>>>>>> dev/newmzouhir
+/*   Updated: 2026/06/21 10:01:26 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -164,22 +160,11 @@ void Client::onWritable() {
 			StaticFileHandler staticFileHandler;
 			CgiHandler		  cgiHandler;
 			UploadHandler	  uploadHandler;
-<<<<<<< HEAD
 			if (cgiHandler.canHandle(_request, *bestMatch)) { // TODO check it up
 				if (cgi_status == NO_CGI)
 					return;
-=======
-			DeleteHandler	  deleteHandler;
-			if (cgiHandler.canHandle(_request, *bestMatch)) {
-				if (!bestMatch->isMethodAllowed(_request.getMethod())) {
-					response.setStatus(405);
-					HttpResponse::applyErrorPage(response, 405, serv);
-					break;
-				}
-				cgiHandler.handle(_request, *bestMatch, response, serv);
->>>>>>> dev/newmzouhir
-				break;
 			}
+			DeleteHandler deleteHandler;
 			if (deleteHandler.canHandle(_request, *bestMatch)) {
 				if (!bestMatch->isMethodAllowed(_request.getMethod())) {
 					response.setStatus(405);
@@ -278,6 +263,8 @@ void Client::setWriteBuffer(std::string const& write_buffer) {
 }
 
 bool Client::isTimeOut() {
+	if (cgi_status != CGI_RUNNING)
+		return false;
 	if (serv && !serv->getTimeOut().empty()) {
 		double diff = std::difftime(time(NULL), lastActivity);
 		if (diff < 0)
@@ -291,7 +278,6 @@ bool Client::isTimeOut() {
 	}
 	return false;
 }
-<<<<<<< HEAD
 
 bool Client::shouldBeHandleByCGI() {
 	if (cgi_status != NO_CGI) {
@@ -334,6 +320,8 @@ void Client::handleByCGI() {
 	if (!cgiHandler.handle(_request, *bestMatch, response, serv)) {
 		std::cerr << "Echec du lancement du CGI\n";
 		cgi_status = CGI_FINISHED;
+		cgiHandler.fillResponse(response);
+		std::cerr << "response echec" << response.serialize() << "\n";
 	}
 	std::cerr << "Fin lancement CGI\n";
 }
@@ -361,5 +349,3 @@ bool Client::isCgiFinished() {
 	}
 	return false;
 }
-=======
->>>>>>> dev/newmzouhir

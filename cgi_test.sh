@@ -10,4 +10,4 @@ for (( i=1; i<= 100; i++ )) do
 	curl localhost:8080/cgi-bin/hello.py;
 done
 
-echo "stop" | nc -uU -q 0 /tmp/clo*sock
+echo "stop" | nc -uU  /tmp/clo*sock

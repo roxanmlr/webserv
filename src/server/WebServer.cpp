@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:49:36 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/21 08:39:11 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/21 09:52:09 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -136,6 +136,10 @@ void WebServer::serveClient(int epoll_fd, struct epoll_event events[MAX_EVENTS],
 		int input  = -1;
 		int output = -1;
 		client->getCgiFd(input, output);
+		if (input == -1 || output == -1) {
+			std::cerr << "Echec lancement du CGI\n";
+			return;
+		}
 		{
 			struct epoll_event ev_client;
 			std::memset(&ev_client, 0, sizeof(ev_client));

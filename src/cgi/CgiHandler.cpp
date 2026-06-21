@@ -115,7 +115,7 @@ void CgiHandler::closeFdOnError() {
 	}
 }
 void CgiHandler::hasTimeOut() {
-	if (!serv)
+	if (!serv || state == ERROR || state == FINISHED)
 		return;
 	if ((!serv->getTimeOut().empty() && static_cast<size_t>(difftime(time(NULL), s_time)) >= serv->getTimeOut().get()) ||
 		(serv->getTimeOut().empty() && difftime(time(NULL), s_time) >= TIME_OUT_CGI)) {
@@ -191,11 +191,13 @@ void CgiHandler::fillResponse(IHttpResponse& res) {
 		close(outfile[0]);
 
 	if (state == TIMEOUT) {
+		std::cerr << "Fill timeout error\n";
 		res.setStatus(504);
 		res.setBody("<h1>504 Gateway Timeout</h1>");
 		return;
 	}
 	if (state == ERROR) {
+		std::cerr << "Fill state error\n";
 		res.setStatus(502);
 		res.setBody("<h1>502 Bad Gateway</h1>");
 		return;
@@ -283,8 +285,9 @@ bool CgiHandler::handle(const IHttpRequest& req, const ILocationConfig& loc, IHt
 		std::cerr << "\n\tF_OK:" << access(script_path.c_str(), F_OK) << std::endl;
 		std::cerr << "\n\tX_OK:" << access(script_path.c_str(), X_OK) << std::endl;
 		state = ERROR;
-		res.setStatus(502);
-		res.setBody("<h1>502 Bad Gateway</h1>");
+		pid	  = -1;
+		closeFdOnError();
+		(void)res;
 		return false;
 	}
 	std::string cgi_script_name = req.getUri();
