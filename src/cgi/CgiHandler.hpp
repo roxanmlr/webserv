@@ -1,5 +1,6 @@
 #pragma once
 #include "../config/Config.hpp"
+#include "../http/HttpResponse.hpp"
 #include "../server/WebServerError.hpp"
 #include "../utils/utils.hpp"
 #include "ICgiHandler.hpp"

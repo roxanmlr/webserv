@@ -192,14 +192,12 @@ void CgiHandler::fillResponse(IHttpResponse& res) {
 
 	if (state == TIMEOUT) {
 		std::cerr << "Fill timeout error\n";
-		res.setStatus(504);
-		res.setBody("<h1>504 Gateway Timeout</h1>");
+		HttpResponse::applyErrorPage(res, 504, serv);
 		return;
 	}
 	if (state == ERROR) {
 		std::cerr << "Fill state error\n";
-		res.setStatus(502);
-		res.setBody("<h1>502 Bad Gateway</h1>");
+		HttpResponse::applyErrorPage(res, 502, serv);
 		return;
 	}
 	parse_cgi_response(output, res);

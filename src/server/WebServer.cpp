@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:49:36 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/21 09:52:09 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/21 11:05:22 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -185,7 +185,26 @@ void WebServer::serveClient(int epoll_fd, struct epoll_event events[MAX_EVENTS],
 
 	if (client->shouldClose()) {
 		close(client_fd);
-		delete client_map[client_fd];
+		IClient* client_to_del = client_map[client_fd];
+		for (std::map<int, IClient*>::iterator it = cgi_input_map.begin(); it != cgi_input_map.end();) {
+			if (it->second == client_to_del) {
+				std::map<int, IClient*>::iterator del_ = it;
+				cgi_input_map.erase(del_);
+				it++;
+				continue;
+			}
+			it++;
+		}
+		for (std::map<int, IClient*>::iterator it = cgi_output_map.begin(); it != cgi_output_map.end();) {
+			if (it->second == client_to_del) {
+				std::map<int, IClient*>::iterator del_ = it;
+				cgi_output_map.erase(del_);
+				it++;
+				continue;
+			}
+			it++;
+		}
+		delete client_to_del;
 		client_map.erase(client_fd);
 		return;
 	}

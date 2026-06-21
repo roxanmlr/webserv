@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/01 20:23:45 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/21 10:01:26 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/21 10:23:38 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -313,8 +313,7 @@ void Client::handleByCGI() {
 	ILocationConfig const* bestMatch = optLoc.get();
 	if (!bestMatch->isMethodAllowed(_request.getMethod())) {
 		std::cerr << "Method not allowed fin du CGI\n";
-		response.setStatus(405);
-		response.setBody("<h1>405 Method Not Allowed</h1>");
+		HttpResponse::applyErrorPage(response, 405, serv);
 		cgi_status = CGI_FINISHED;
 	}
 	if (!cgiHandler.handle(_request, *bestMatch, response, serv)) {

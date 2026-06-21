@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   HttpResponse.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mzouhir <marvin@42.fr>                     +#+  +:+       +#+        */
+/*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/08 18:05:05 by mzouhir           #+#    #+#             */
-/*   Updated: 2026/06/20 17:18:06 by mzouhir          ###   ########.fr       */
+/*   Updated: 2026/06/21 10:31:43 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -114,12 +114,31 @@ std::string HttpResponse::serialize() const {
 }
 
 std::string intToString(int n) {
+	switch (n) {
+	case 400:
+		return "Bad request";
+	case 404:
+		return "Not Found";
+	case 405:
+		return "Method Not Allowed";
+	case 408:
+		return "Request Timeout";
+	case 500:
+		return "Internal Server Error";
+	case 502:
+		return "Bad Gateway";
+	case 504:
+		return "Gateway Timeout";
+	default:
+		break;
+	}
 	std::stringstream ss;
 	ss << n;
 	return (ss.str());
 }
 
 void HttpResponse::applyErrorPage(IHttpResponse& res, int statusCode, const IServerConfig* serv) {
+	res.setStatus(statusCode);
 	if (!serv) {
 		res.setBody("<h1>" + intToString(statusCode) + " Error</h1>");
 	}
