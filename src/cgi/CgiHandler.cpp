@@ -68,15 +68,15 @@ int CgiHandler::getOutputFd() const {
 bool CgiHandler::isFinished() {
 	std::cerr << "Test fin CGI\n";
 	hasTimeOut();
-	if (state == ERROR || state == FINISHED || state == TIMEOUT){
+	if (state == ERROR || state == FINISHED || state == TIMEOUT) {
 		std::cerr << "CGI deja terminé\n";
 		return true;
 	}
 
 	if (state == PROCESSING) {
-	int wstatus;
+		int wstatus;
 		int child_pid = waitpid(pid, &wstatus, WNOHANG);
-		if (child_pid == 0){
+		if (child_pid == 0) {
 			std::cerr << "Client runninng\n";
 			return false;
 		}
@@ -89,7 +89,7 @@ bool CgiHandler::isFinished() {
 		std::cerr << "Client terminé\n";
 		state = PROCESS_END;
 	}
-	if (read_finished && write_finished){
+	if (read_finished && write_finished) {
 		state = FINISHED;
 		std::cerr << "CGI terminé\n";
 		return true;
@@ -115,19 +115,18 @@ void CgiHandler::closeFdOnError() {
 	}
 }
 void CgiHandler::hasTimeOut() {
-	/*
+	if (!serv)
+		return;
 	if ((!serv->getTimeOut().empty() && static_cast<size_t>(difftime(time(NULL), s_time)) >= serv->getTimeOut().get()) ||
 		(serv->getTimeOut().empty() && difftime(time(NULL), s_time) >= TIME_OUT_CGI)) {
-		if (pid != -1) {
-			kill(pid, SIGKILL);
-			pid = -1;
-		}
+		closeFdOnError();
+		std::cerr << "CGI TimeOut\n";
 		state = TIMEOUT;
-	}*/
+	}
 }
 bool CgiHandler::onOutput() {
 	std::cerr << "Host reading from client\n";
-	if (read_finished){
+	if (read_finished) {
 		std::cerr << "Host reading deja terminé\n";
 		return true;
 	}
@@ -152,9 +151,9 @@ bool CgiHandler::onOutput() {
 }
 bool CgiHandler::onInput() {
 	std::cerr << "Host writing to client\n";
-	if (write_finished){
+	if (write_finished) {
 		std::cerr << "Host writing deja terminé\n";
-		return true;	
+		return true;
 	}
 	ssize_t written = write(pipefd[1], bufwrite + bufwrite_pos, bufwrite_size - bufwrite_pos);
 	if (written < 0 && !(errno == EAGAIN || errno == EWOULDBLOCK)) {
@@ -171,7 +170,7 @@ bool CgiHandler::onInput() {
 			std::cerr << "Host writing terminé proprement\n";
 		}
 	}
-	if (isFinished()){
+	if (isFinished()) {
 		std::cerr << "Programme terminé\n";
 		write_finished = true;
 		close(pipefd[1]);

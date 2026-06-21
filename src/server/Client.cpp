@@ -194,7 +194,7 @@ void Client::onWritable() {
 		const char* data = write_buffer.data() + write_pos;
 		size_t		size = write_buffer.size() - write_pos;
 		std::cerr << "Sending\n\t" << data << "\n";
-		ssize_t		n	 = send(fd, data, size, MSG_NOSIGNAL);
+		ssize_t n = send(fd, data, size, MSG_NOSIGNAL);
 		if (n > 0) {
 			write_pos += n;
 			write_status = WRITE_OK;
@@ -269,11 +269,11 @@ bool Client::isTimeOut() {
 }
 
 bool Client::shouldBeHandleByCGI() {
-	if (cgi_status != NO_CGI){
+	if (cgi_status != NO_CGI) {
 		return false;
 	}
 	std::cerr << "Test si la requete peut etre gere par CGI\n";
-	if (parse_state != IHttpRequest::COMPLETE ){
+	if (parse_state != IHttpRequest::COMPLETE) {
 		std::cerr << "Parsing incomplet\n";
 		return false;
 	}
@@ -281,7 +281,7 @@ bool Client::shouldBeHandleByCGI() {
 	if (optLoc.empty())
 		return false;
 	ILocationConfig const* bestMatch = optLoc.get();
-	if(cgiHandler.canHandle(_request, *bestMatch)){
+	if (cgiHandler.canHandle(_request, *bestMatch)) {
 		std::cerr << "La requête doit être geree par CGI\n";
 		return true;
 	}
@@ -290,7 +290,7 @@ bool Client::shouldBeHandleByCGI() {
 }
 
 void Client::handleByCGI() {
-	if (cgi_status != NO_CGI){
+	if (cgi_status != NO_CGI) {
 		std::cerr << "Requete deja gere\n";
 		exit(1);
 	}
@@ -306,7 +306,7 @@ void Client::handleByCGI() {
 		response.setBody("<h1>405 Method Not Allowed</h1>");
 		cgi_status = CGI_FINISHED;
 	}
-	if (!cgiHandler.handle(_request, *bestMatch, response, serv)){
+	if (!cgiHandler.handle(_request, *bestMatch, response, serv)) {
 		std::cerr << "Echec du lancement du CGI\n";
 		cgi_status = CGI_FINISHED;
 	}

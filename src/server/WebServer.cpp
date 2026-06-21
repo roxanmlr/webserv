@@ -125,10 +125,10 @@ void WebServer::addClient(int epoll_fd, int server_fd) {
 
 void WebServer::serveClient(int epoll_fd, struct epoll_event events[MAX_EVENTS], int event_pos, int client_fd) {
 	static int is_cgi_launched = 0;
-	IClient* client = client_map[client_fd];
-	if (!client){
+	IClient*   client		   = client_map[client_fd];
+	if (!client) {
 		std::cerr << "Null client\n";
-		return ;
+		return;
 	}
 	// TODO check if a Cgi is running
 	if (client && client->shouldBeHandleByCGI()) {
@@ -159,9 +159,9 @@ void WebServer::serveClient(int epoll_fd, struct epoll_event events[MAX_EVENTS],
 			cgi_output_map[output] = client;
 		}
 		is_cgi_launched = 1;
-		return ;
+		return;
 	}
-	if (is_cgi_launched == 1){
+	if (is_cgi_launched == 1) {
 		std::cerr << "Client continue past CGI\n";
 		is_cgi_launched = 2;
 	}
@@ -169,8 +169,8 @@ void WebServer::serveClient(int epoll_fd, struct epoll_event events[MAX_EVENTS],
 		client->onReadable();
 	}
 	// TODO if parsing end check if it should be managed by a new CGI
-	if (client->isCgiFinished()){
-		if (is_cgi_launched == 2){
+	if (client->isCgiFinished()) {
+		if (is_cgi_launched == 2) {
 			std::cerr << "CGI Finished\n";
 			is_cgi_launched = 3;
 		}
@@ -261,7 +261,7 @@ void WebServer::run() {
 					std::cerr << "Fin Reveil du CGI Input\n";
 				} else if (cgi_output_map.count(fd) > 0) {
 					std::cerr << "Reveil du CGI Output\n";
-					if(cgi_output_map[fd]->onCgiOutput()){
+					if (cgi_output_map[fd]->onCgiOutput()) {
 						std::cerr << "suppression du CGI Output\n";
 						client_cgi_monitor.insert(cgi_output_map[fd]);
 						cgi_output_map.erase(fd);
@@ -270,8 +270,8 @@ void WebServer::run() {
 				} else if (client_map.count(fd) > 0)
 					serveClient(epoll_fd, events, i, fd);
 			}
-			for(std::set<IClient*>::iterator it = client_cgi_monitor.begin();it != client_cgi_monitor.end();){
-				if ((*it)->isCgiFinished()){
+			for (std::set<IClient*>::iterator it = client_cgi_monitor.begin(); it != client_cgi_monitor.end();) {
+				if ((*it)->isCgiFinished()) {
 					std::set<IClient*>::iterator d = it;
 					it++;
 					client_cgi_monitor.erase(d);
