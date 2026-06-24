@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ILocationConfig.hpp                                :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lmilando <lmilando@42.fr>                  +#+  +:+       +#+        */
+/*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:47:46 by lmilando          #+#    #+#             */
-/*   Updated: 2026/05/27 23:47:47 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/24 17:23:11 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,8 +27,8 @@ public:
 		std::string target;
 	};
 	struct ReturnConfig {
-		int					  code;
-		Optional<std::string> url;
+		int			code;
+		std::string url;
 	};
 	struct CgiPass {
 		std::string extension;

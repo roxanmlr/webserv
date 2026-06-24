@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/08 18:05:05 by mzouhir           #+#    #+#             */
-/*   Updated: 2026/06/21 10:31:43 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/24 17:34:24 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -129,6 +129,8 @@ std::string intToString(int n) {
 		return "Bad Gateway";
 	case 504:
 		return "Gateway Timeout";
+	case 301:
+		return "Moved Permanently";
 	default:
 		break;
 	}

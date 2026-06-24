@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/01 20:23:52 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/21 09:43:49 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/24 17:44:15 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@
 #include "../cgi/CgiHandler.hpp"
 #include "../config/IServerConfig.hpp"
 #include "../handler/DeleteHandler.hpp"
+#include "../handler/RedirectionHandler.hpp"
 #include "../handler/StaticFileHandler.hpp"
 #include "../http/HttpRequest.hpp"
 #include "../http/HttpResponse.hpp"

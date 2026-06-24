@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:47:26 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/20 08:01:45 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/24 17:24:06 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -312,10 +312,10 @@ void ConfigParser::parseReturnDirective(LocationConfigBuilder& builder, std::vec
 		throw ConfigError("return: expected integer status code, got `" + code_str + "`");
 	ILocationConfig::ReturnConfig ret;
 	ret.code = static_cast<int>(std::strtol(code_str.c_str(), NULL, 10));
-	if (!toks.empty() && toks.front().type == Tokenizer::WORD) {
-		ret.url.set(toks.front().value);
-		toks.erase(toks.begin());
-	}
+	if (toks.empty() || toks.front().type != Tokenizer::WORD)
+		throw ConfigError("return: expected an url");
+	ret.url = toks.front().value;
+	toks.erase(toks.begin());
 	builder.setReturnConfig(ret);
 }
 

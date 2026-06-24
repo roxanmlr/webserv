@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/01 20:23:45 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/21 10:23:38 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/24 19:02:22 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -155,46 +155,61 @@ void Client::onWritable() {
 				break;
 			}
 		}
-		ILocationConfig const* bestMatch = optLoc.get();
-		{
-			StaticFileHandler staticFileHandler;
-			CgiHandler		  cgiHandler;
-			UploadHandler	  uploadHandler;
-			if (cgiHandler.canHandle(_request, *bestMatch)) { // TODO check it up
-				if (cgi_status == NO_CGI)
-					return;
-			}
-			DeleteHandler deleteHandler;
-			if (deleteHandler.canHandle(_request, *bestMatch)) {
-				if (!bestMatch->isMethodAllowed(_request.getMethod())) {
-					response.setStatus(405);
-					HttpResponse::applyErrorPage(response, 405, serv);
+		if (!optLoc.empty()) {
+
+			ILocationConfig const* bestMatch = optLoc.get();
+			{
+				StaticFileHandler  staticFileHandler;
+				CgiHandler		   cgiHandler;
+				UploadHandler	   uploadHandler;
+				RedirectionHandler redirectionHandler;
+				DeleteHandler	   deleteHandler;
+
+				if (redirectionHandler.canHandle(_request, *bestMatch)) {
+					if (!bestMatch->isMethodAllowed(_request.getMethod())) {
+						response.setStatus(405);
+						HttpResponse::applyErrorPage(response, 405, serv);
+						break;
+					}
+					redirectionHandler.handle(_request, *bestMatch, response, serv);
 					break;
 				}
-				deleteHandler.handle(_request, *bestMatch, response, serv);
-				break;
-			}
-			if (staticFileHandler.canHandle(_request, *bestMatch)) {
-				if (!bestMatch->isMethodAllowed(_request.getMethod())) {
-					response.setStatus(405);
-					HttpResponse::applyErrorPage(response, 405, serv);
+				if (cgiHandler.canHandle(_request, *bestMatch)) { // TODO check it up
+					if (cgi_status == NO_CGI)
+						return;
+				}
+				if (deleteHandler.canHandle(_request, *bestMatch)) {
+					if (!bestMatch->isMethodAllowed(_request.getMethod())) {
+						response.setStatus(405);
+						HttpResponse::applyErrorPage(response, 405, serv);
+						break;
+					}
+					deleteHandler.handle(_request, *bestMatch, response, serv);
 					break;
 				}
-				staticFileHandler.handle(_request, *bestMatch, response, serv);
-				break;
-			}
-			if (uploadHandler.canHandle(_request, *bestMatch)) {
-				if (!bestMatch->isMethodAllowed(_request.getMethod())) {
-					response.setStatus(405);
-					HttpResponse::applyErrorPage(response, 405, serv);
+				if (staticFileHandler.canHandle(_request, *bestMatch)) {
+					std::cerr << "Static file handler\n";
+					if (!bestMatch->isMethodAllowed(_request.getMethod())) {
+						response.setStatus(405);
+						HttpResponse::applyErrorPage(response, 405, serv);
+						break;
+					}
+					staticFileHandler.handle(_request, *bestMatch, response, serv);
 					break;
 				}
-				uploadHandler.handle(_request, *bestMatch, response, serv);
+				if (uploadHandler.canHandle(_request, *bestMatch)) {
+					if (!bestMatch->isMethodAllowed(_request.getMethod())) {
+						response.setStatus(405);
+						HttpResponse::applyErrorPage(response, 405, serv);
+						break;
+					}
+					uploadHandler.handle(_request, *bestMatch, response, serv);
+					break;
+				}
+				response.setStatus(405);
+				HttpResponse::applyErrorPage(response, 405, serv);
 				break;
 			}
-			response.setStatus(405);
-			HttpResponse::applyErrorPage(response, 405, serv);
-			break;
 		}
 	}
 	if (write_status == WRITE_READY) // TODO check if the CGI is on and is finished

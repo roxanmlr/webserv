@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   LocationConfig.cpp                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lmilando <lmilando@42.fr>                  +#+  +:+       +#+        */
+/*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:48:06 by lmilando          #+#    #+#             */
-/*   Updated: 2026/05/27 23:48:07 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/24 18:55:45 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -188,9 +188,7 @@ std::ostream& operator<<(std::ostream& out, ILocationConfig const& loc) {
 		out << "        autoindex on;\n";
 	if (!loc.getReturnConfig().empty()) {
 		out << "        return " << loc.getReturnConfig().get().code;
-		if (!loc.getReturnConfig().get().url.empty())
-			out << " " << loc.getReturnConfig().get().url.get();
-		out << ";\n";
+		out << " " << loc.getReturnConfig().get().url << ";\n";
 	}
 	if (!loc.getUploadStore().empty())
 		out << "        upload_store " << loc.getUploadStore().get() << ";\n";
