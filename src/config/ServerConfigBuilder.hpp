@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:47:57 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/20 07:57:37 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/25 20:54:56 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,6 +29,7 @@ private:
 	Optional<std::size_t>					  client_max_body_size;
 	Optional<std::size_t>					  timeOut;
 	int										  _hasDirectoryList; // 0 init, 1 has dir list , 2 has not dir list
+	Optional<std::string>					  auth_filename;
 
 public:
 	ServerConfigBuilder();
@@ -45,6 +46,7 @@ public:
 	ServerConfigBuilder& setTimeOut(size_t timeOut);
 	ServerConfigBuilder& autoIndexOn();
 	ServerConfigBuilder& autoIndexOff();
+	ServerConfigBuilder& setAuthBasicUserFile(std::string auth_basic_user_file);
 	IServerConfig*		 build();
 };
 #endif

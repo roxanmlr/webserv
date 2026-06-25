@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:48:06 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/24 18:55:45 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/25 22:23:14 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,17 +15,17 @@
 
 LocationConfig::LocationConfig()
 	: path(""), match_type(ILocationConfig::MATCH_PREFIX), root(), index_files(), error_pages(), allowed_methods(), auto_index(false), client_max_body_size(),
-	  return_config(), upload_store(), fastcgi_pass(), fastcgi_params(), cgi_passes() {
+	  return_config(), upload_store(), fastcgi_pass(), fastcgi_params(), cgi_passes(), auth_filename(), auth_activate(false) {
 }
 
 LocationConfig::LocationConfig(std::string path, ILocationConfig::MatchType match_type, Optional<std::string> root, std::vector<std::string> index_files,
 							   std::vector<IServerConfig::ErrorPage> error_pages, std::vector<ILocationConfig::Method> allowed_methods, bool auto_index,
 							   Optional<std::size_t> client_max_body_size, Optional<ILocationConfig::ReturnConfig> return_config,
 							   Optional<std::string> upload_store, Optional<std::string> fastcgi_pass, std::map<std::string, std::string> fastcgi_params,
-							   std::vector<ILocationConfig::CgiPass> cgi_passes)
+							   std::vector<ILocationConfig::CgiPass> cgi_passes, Optional<std::string> auth_filename, bool auth_activate)
 	: path(path), match_type(match_type), root(root), index_files(index_files), error_pages(error_pages), allowed_methods(allowed_methods),
 	  auto_index(auto_index), client_max_body_size(client_max_body_size), return_config(return_config), upload_store(upload_store), fastcgi_pass(fastcgi_pass),
-	  fastcgi_params(fastcgi_params), cgi_passes(cgi_passes) {
+	  fastcgi_params(fastcgi_params), cgi_passes(cgi_passes), auth_filename(auth_filename), auth_activate(auth_activate) {
 }
 
 LocationConfig::~LocationConfig() {
@@ -54,6 +54,8 @@ LocationConfig& LocationConfig::operator=(LocationConfig const& other) {
 	this->fastcgi_pass		   = other.fastcgi_pass;
 	this->fastcgi_params	   = other.fastcgi_params;
 	this->cgi_passes		   = other.cgi_passes;
+	this->auth_activate		   = other.auth_activate;
+	this->auth_filename		   = other.auth_filename;
 	return *this;
 }
 
@@ -125,6 +127,14 @@ std::vector<ILocationConfig::CgiPass> const& LocationConfig::getCgiPasses() cons
 	return cgi_passes;
 }
 
+bool LocationConfig::needsAuthentication() const {
+	return auth_activate;
+}
+
+Optional<std::string> LocationConfig::getAuthFilename() const {
+	return auth_filename;
+}
+
 static std::string sizeToStr(std::size_t sz) {
 	std::ostringstream oss;
 	if (sz != 0 && sz % (1024UL * 1024 * 1024) == 0)
@@ -149,6 +159,13 @@ std::ostream& operator<<(std::ostream& out, ILocationConfig const& loc) {
 		out << "        root " << loc.getRoot().get() << ";\n";
 	if (!loc.getClientMaxBodySize().empty())
 		out << "        client_max_body_size " << sizeToStr(loc.getClientMaxBodySize().get()) << ";\n";
+	
+	if (!loc.getAuthFilename().empty())
+		out << "auth_basic_user_file " << loc.getAuthFilename().get() << ";\n";
+	if (!loc.needsAuthentication())
+		out << "        auth_basic no\n";
+	else 
+		out << "        auth_basic yes\n";
 	const std::vector<std::string>& idx = loc.getIndexFiles();
 	if (!idx.empty()) {
 		out << "        index";

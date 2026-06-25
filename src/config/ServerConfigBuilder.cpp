@@ -6,14 +6,15 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:48:30 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/20 07:58:21 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/25 20:57:43 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "ServerConfigBuilder.hpp"
 
 ServerConfigBuilder::ServerConfigBuilder()
-	: listen_addresses(), server_names(), root_dir(), indexes(), error_pages(), location_configs(), client_max_body_size(), timeOut(), _hasDirectoryList(0) {
+	: listen_addresses(), server_names(), root_dir(), indexes(), error_pages(), location_configs(), client_max_body_size(), timeOut(), _hasDirectoryList(0),
+	  auth_filename() {
 }
 
 ServerConfigBuilder::ServerConfigBuilder(ServerConfigBuilder const& other)
@@ -36,6 +37,7 @@ ServerConfigBuilder& ServerConfigBuilder::operator=(ServerConfigBuilder const& o
 	for (std::vector<ILocationConfig*>::const_iterator it = other.location_configs.begin(); it != other.location_configs.end(); ++it)
 		location_configs.push_back((*it)->clone());
 	this->client_max_body_size = other.client_max_body_size;
+	this->auth_filename		   = other.auth_filename;
 	return *this;
 }
 
@@ -122,6 +124,13 @@ ServerConfigBuilder& ServerConfigBuilder::autoIndexOff() {
 	return *this;
 }
 
+ServerConfigBuilder& ServerConfigBuilder::setAuthBasicUserFile(std::string auth_basic_user_file) {
+	if (!auth_filename.empty())
+		throw ConfigError("Duplicate auth_filename directive");
+	auth_filename.set(auth_basic_user_file);
+	return *this;
+}
+
 IServerConfig* ServerConfigBuilder::build() {
 	if (root_dir.empty()) {
 		throw ConfigError("No root directory provided");
@@ -133,5 +142,5 @@ IServerConfig* ServerConfigBuilder::build() {
 		location_configs.push_back(lcfgBuilder.build());
 	}
 	return new ServerConfig(listen_addresses, server_names, root_dir, indexes, error_pages, location_configs, client_max_body_size, timeOut,
-							_hasDirectoryList == 1);
+							_hasDirectoryList == 1, auth_filename);
 }

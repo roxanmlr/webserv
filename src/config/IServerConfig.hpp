@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   IServerConfig.hpp                                  :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mzouhir <marvin@42.fr>                     +#+  +:+       +#+        */
+/*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:47:51 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/19 16:58:45 by mzouhir          ###   ########.fr       */
+/*   Updated: 2026/06/25 21:00:42 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,6 +44,7 @@ public:
 	virtual bool								 matchesServerName(const std::string& name) const = 0;
 	virtual Optional<ILocationConfig const*>	 matchLocation(const std::string& uri) const	  = 0;
 	virtual bool								 hasDirectoryList() const						  = 0;
+	virtual Optional<std::string>				 getAuthFilename() const						  = 0;
 };
 
 std::ostream& operator<<(std::ostream& out, IServerConfig const& srv);

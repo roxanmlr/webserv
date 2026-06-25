@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   LocationConfigBuilder.cpp                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lmilando <lmilando@42.fr>                  +#+  +:+       +#+        */
+/*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:47:07 by lmilando          #+#    #+#             */
-/*   Updated: 2026/05/27 23:47:09 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/25 20:49:53 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -145,7 +145,25 @@ LocationConfigBuilder& LocationConfigBuilder::addCgiPass(ILocationConfig::CgiPas
 	return *this;
 }
 
+LocationConfigBuilder& LocationConfigBuilder::setAuthBasicUserFile(std::string filename) {
+	if (!auth_filename.empty())
+		throw ConfigError("Authfile is duplicated in configuration");
+	auth_filename.set(filename);
+	return *this;
+}
+
+LocationConfigBuilder& LocationConfigBuilder::setAuthSwitch(bool activate) {
+	if (!auth_active.empty())
+		throw ConfigError("Authentification Activation is already set");
+	auth_active.set(activate);
+	return *this;
+}
+
 ILocationConfig* LocationConfigBuilder::build() {
+	bool auth_active = true;
+	if (!this->auth_active.empty()) {
+		auth_active = this->auth_active.get();
+	}
 	return new LocationConfig(path, match_type, root, index_files, error_pages, allowed_methods, auto_index, client_max_body_size, return_config, upload_store,
-							  fastcgi_pass, fastcgi_params, cgi_passes);
+							  fastcgi_pass, fastcgi_params, cgi_passes, auth_filename, auth_active);
 }

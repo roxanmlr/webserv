@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   LocationConfig.hpp                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: lmilando <lmilando@42.fr>                  +#+  +:+       +#+        */
+/*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:48:34 by lmilando          #+#    #+#             */
-/*   Updated: 2026/05/27 23:48:35 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/25 21:05:54 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,13 +31,16 @@ private:
 	Optional<std::string>					fastcgi_pass;
 	std::map<std::string, std::string>		fastcgi_params;
 	std::vector<ILocationConfig::CgiPass>	cgi_passes;
+	Optional<std::string>					auth_filename;
+	bool									auth_activate;
 
 public:
 	LocationConfig();
 	LocationConfig(std::string path, ILocationConfig::MatchType match_type, Optional<std::string> root, std::vector<std::string> index_files,
 				   std::vector<IServerConfig::ErrorPage> error_pages, std::vector<ILocationConfig::Method> allowed_methods, bool auto_index,
 				   Optional<std::size_t> client_max_body_size, Optional<ILocationConfig::ReturnConfig> return_config, Optional<std::string> upload_store,
-				   Optional<std::string> fastcgi_pass, std::map<std::string, std::string> fastcgi_params, std::vector<ILocationConfig::CgiPass> cgi_passes);
+				   Optional<std::string> fastcgi_pass, std::map<std::string, std::string> fastcgi_params, std::vector<ILocationConfig::CgiPass> cgi_passes,
+				   Optional<std::string> auth_filename, bool auth_activate);
 	~LocationConfig();
 	LocationConfig(LocationConfig const& other);
 	LocationConfig&								   operator=(LocationConfig const& other);
@@ -57,6 +60,8 @@ public:
 	Optional<std::string> const&				   getFastCgiPass() const;
 	std::map<std::string, std::string> const&	   getFastCgiParams() const;
 	std::vector<ILocationConfig::CgiPass> const&   getCgiPasses() const;
+	bool										   needsAuthentication() const;
+	Optional<std::string>						   getAuthFilename() const;
 	bool										   isMethodAllowed(const std::string& method) const;
 	bool										   operator==(ILocationConfig const& other) const;
 };

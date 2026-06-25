@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:47:38 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/18 22:53:20 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/25 20:33:51 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,6 +32,8 @@ private:
 	Optional<std::string>					fastcgi_pass;
 	std::map<std::string, std::string>		fastcgi_params;
 	std::vector<ILocationConfig::CgiPass>	cgi_passes;
+	Optional<std::string>					auth_filename;
+	Optional<bool>							auth_active;
 
 public:
 	LocationConfigBuilder();
@@ -53,6 +55,8 @@ public:
 	LocationConfigBuilder& setFastCgiPass(std::string fastcgi_pass);
 	LocationConfigBuilder& addFastCgiParam(std::string key, std::string value);
 	LocationConfigBuilder& addCgiPass(ILocationConfig::CgiPass cgi_pass);
+	LocationConfigBuilder& setAuthBasicUserFile(std::string filename);
+	LocationConfigBuilder& setAuthSwitch(bool activate);
 	ILocationConfig*	   build();
 };
 #endif

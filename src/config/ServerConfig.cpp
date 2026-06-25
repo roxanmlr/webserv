@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:47:13 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/20 01:13:39 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/25 22:23:36 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,9 +21,10 @@ ServerConfig::ServerConfig()
 
 ServerConfig::ServerConfig(std::vector<IServerConfig::ListenAddress> listen_addresses, std::vector<std::string> server_names, Optional<std::string> root_dir,
 						   std::vector<std::string> indexes, std::vector<IServerConfig::ErrorPage> error_pages, std::vector<ILocationConfig*> location_configs,
-						   Optional<std::size_t> client_max_body_size, Optional<std::size_t> timeOut, bool _hasDirectoryList)
+						   Optional<std::size_t> client_max_body_size, Optional<std::size_t> timeOut, bool _hasDirectoryList,
+						   Optional<std::string> auth_filename)
 	: listen_addresses(listen_addresses), server_names(server_names), root_dir(root_dir), indexes(indexes), error_pages(error_pages), location_configs(),
-	  client_max_body_size(client_max_body_size), timeOut(timeOut), _hasDirectoryList(_hasDirectoryList) {
+	  client_max_body_size(client_max_body_size), timeOut(timeOut), _hasDirectoryList(_hasDirectoryList), auth_filename(auth_filename) {
 	for (std::vector<ILocationConfig*>::iterator it = location_configs.begin(); it != location_configs.end(); ++it)
 		this->location_configs.push_back((*it)->clone());
 }
@@ -34,7 +35,7 @@ ServerConfig::~ServerConfig() {
 }
 
 ServerConfig::ServerConfig(ServerConfig const& other)
-	: listen_addresses(), server_names(), root_dir(), indexes(), error_pages(), location_configs(), client_max_body_size() {
+	: listen_addresses(), server_names(), root_dir(), indexes(), error_pages(), location_configs(), client_max_body_size(), auth_filename() {
 	*this = other;
 }
 
@@ -54,6 +55,7 @@ ServerConfig& ServerConfig::operator=(ServerConfig const& other) {
 	for (std::vector<ILocationConfig*>::const_iterator it = other.location_configs.begin(); it != other.location_configs.end(); ++it)
 		this->location_configs.push_back((*it)->clone());
 	this->client_max_body_size = other.client_max_body_size;
+	this->auth_filename		   = other.auth_filename;
 	return *this;
 }
 
@@ -105,6 +107,10 @@ bool ServerConfig::hasDirectoryList() const {
 	return _hasDirectoryList;
 }
 
+Optional<std::string> ServerConfig::getAuthFilename() const {
+	return auth_filename;
+}
+
 static std::string sizeToStr(std::size_t sz) {
 	std::ostringstream oss;
 	if (sz != 0 && sz % (1024UL * 1024 * 1024) == 0)
@@ -148,6 +154,8 @@ std::ostream& operator<<(std::ostream& out, IServerConfig const& srv) {
 			out << " " << *c;
 		out << " " << it->path << ";\n";
 	}
+	if (!srv.getAuthFilename().empty())
+		out << "    auth_basic_user_file " << srv.getAuthFilename().get() << ";\n";
 	const std::vector<ILocationConfig*>& locs = srv.getLocations();
 	for (std::vector<ILocationConfig*>::const_iterator it = locs.begin(); it != locs.end(); ++it) {
 		out << "\n";

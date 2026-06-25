@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:46:58 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/18 22:57:52 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/25 21:01:02 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,12 +27,13 @@ private:
 	Optional<std::size_t>					  client_max_body_size;
 	Optional<size_t>						  timeOut;
 	bool									  _hasDirectoryList;
+	Optional<std::string>					  auth_filename;
 
 public:
 	ServerConfig();
 	ServerConfig(std::vector<IServerConfig::ListenAddress> listen_addresses, std::vector<std::string> server_names, Optional<std::string> root_dir,
 				 std::vector<std::string> indexes, std::vector<IServerConfig::ErrorPage> error_pages, std::vector<ILocationConfig*> location_configs,
-				 Optional<std::size_t> client_max_body_size, Optional<size_t> timeOut, bool hasDirectoryList);
+				 Optional<std::size_t> client_max_body_size, Optional<size_t> timeOut, bool hasDirectoryList, Optional<std::string> auth_filename);
 	~ServerConfig();
 	ServerConfig(ServerConfig const& other);
 	ServerConfig&									 operator=(ServerConfig const& other);
@@ -48,5 +49,6 @@ public:
 	bool											 matchesServerName(const std::string& name) const;
 	Optional<ILocationConfig const*>				 matchLocation(const std::string& uri) const;
 	bool											 hasDirectoryList() const;
+	Optional<std::string>							 getAuthFilename() const;
 };
 #endif

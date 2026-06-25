@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:47:46 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/24 17:23:11 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/25 21:05:11 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,11 +52,13 @@ public:
 	virtual std::vector<Method> const&					 getAllowedMethods() const = 0;
 	virtual bool										 isAutoIndex() const	   = 0;
 
-	virtual Optional<ReturnConfig> const&				 getReturnConfig() const  = 0;
-	virtual Optional<std::string> const&				 getUploadStore() const	  = 0;
-	virtual Optional<std::string> const&				 getFastCgiPass() const	  = 0;
-	virtual std::map<std::string, std::string> const&	 getFastCgiParams() const = 0;
-	virtual std::vector<CgiPass> const&					 getCgiPasses() const	  = 0;
+	virtual Optional<ReturnConfig> const&				 getReturnConfig() const	 = 0;
+	virtual Optional<std::string> const&				 getUploadStore() const		 = 0;
+	virtual Optional<std::string> const&				 getFastCgiPass() const		 = 0;
+	virtual std::map<std::string, std::string> const&	 getFastCgiParams() const	 = 0;
+	virtual std::vector<CgiPass> const&					 getCgiPasses() const		 = 0;
+	virtual bool										 needsAuthentication() const = 0;
+	virtual Optional<std::string>						 getAuthFilename() const	 = 0;
 
 	virtual bool										 isMethodAllowed(const std::string& method) const = 0;
 

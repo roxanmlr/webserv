@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:47:26 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/24 17:24:06 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/25 20:49:21 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -128,6 +128,8 @@ void ConfigParser::parseServerItem(ServerConfigBuilder& builder, std::vector<Tok
 		parseTimeOut(builder, toks);
 	else if (first_eq("autoindex", toks))
 		parseAutoIndexDirective(builder, toks);
+	else if (first_eq("auth_basic_user_file", toks))
+		parseAuthBasicUserFileDirective(builder, toks);
 	else if (toks.empty())
 		throw ConfigError("Unexpected end of file");
 	else
@@ -183,6 +185,11 @@ void ConfigParser::parseErrorPageDirective(ServerConfigBuilder& builder, std::ve
 void ConfigParser::parseClientMaxBodySizeDirective(ServerConfigBuilder& builder, std::vector<Tokenizer::Token>& toks) {
 	consume_token("client_max_body_size", toks);
 	builder.setClientMaxBodySize(parseSize(consumeWordToken("client_max_body_size", toks)));
+}
+
+void ConfigParser::parseAuthBasicUserFileDirective(ServerConfigBuilder& builder, std::vector<Tokenizer::Token>& toks) {
+	consume_token("auth_basic_user_file", toks);
+	builder.setAuthBasicUserFile(consumeWordToken("auth_basic_user_file", toks));
 }
 
 // ─── Location block ──────────────────────────────────────────────────────────
@@ -242,6 +249,10 @@ void ConfigParser::parseLocationItem(LocationConfigBuilder& builder, std::vector
 		parseErrorPageDirective(builder, toks);
 	else if (first_eq("client_max_body_size", toks))
 		parseClientMaxBodySizeDirective(builder, toks);
+	else if (first_eq("auth_basic", toks))
+		parseAuthSwitchDirective(builder, toks);
+	else if (first_eq("auth_basic_user_file", toks))
+		parseAuthBasicUserFileDirective(builder, toks);
 	else if (toks.empty())
 		throw ConfigError("Unexpected end of file");
 	else
@@ -354,6 +365,23 @@ void ConfigParser::parseTimeOut(ServerConfigBuilder& builder, std::vector<Tokeni
 	iss >> value;
 	builder.setTimeOut(value);
 }
+
+void ConfigParser::parseAuthBasicUserFileDirective(LocationConfigBuilder& builder, std::vector<Tokenizer::Token>& toks) {
+	consume_token("auth_basic_user_file", toks);
+	builder.setAuthBasicUserFile(consumeWordToken("auth_basic_user_file", toks));
+}
+
+void ConfigParser::parseAuthSwitchDirective(LocationConfigBuilder& builder, std::vector<Tokenizer::Token>& toks) {
+	consume_token("auth_basic", toks);
+	std::string val = consumeWordToken("auth_basic", toks);
+	if (val == "on")
+		builder.setAuthSwitch(true);
+	else if (val == "off")
+		builder.setAuthSwitch(false);
+	else
+		throw ConfigError("auth_basic: expected `on` or `off`, got `" + val + "`");
+}
+
 // ─── Value helpers ───────────────────────────────────────────────────────────
 
 IServerConfig::ErrorPage ConfigParser::parseErrorPageValue(std::vector<Tokenizer::Token>& toks) {

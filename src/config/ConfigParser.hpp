@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:48:11 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/20 07:54:59 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/24 23:16:13 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,6 +36,7 @@ private:
 	void						 parseClientMaxBodySizeDirective(ServerConfigBuilder& builder, std::vector<Tokenizer::Token>& toks);
 	void						 parseTimeOut(ServerConfigBuilder& builder, std::vector<Tokenizer::Token>& toks);
 	void						 parseAutoIndexDirective(ServerConfigBuilder& builder, std::vector<Tokenizer::Token>& toks);
+	void						 parseAuthBasicUserFileDirective(ServerConfigBuilder& builder, std::vector<Tokenizer::Token>& toks);
 
 	void						 parseLocationBlock(ServerConfigBuilder& builder, std::vector<Tokenizer::Token>& toks);
 	void						 parseLocationItem(LocationConfigBuilder& builder, std::vector<Tokenizer::Token>& toks);
@@ -50,9 +51,10 @@ private:
 	void						 parseCgiPassDirective(LocationConfigBuilder& builder, std::vector<Tokenizer::Token>& toks);
 	void						 parseFastCgiPassDirective(LocationConfigBuilder& builder, std::vector<Tokenizer::Token>& toks);
 	void						 parseFastCgiParamDirective(LocationConfigBuilder& builder, std::vector<Tokenizer::Token>& toks);
-
-	// Value helpers
+	void						 parseAuthBasicUserFileDirective(LocationConfigBuilder& builder, std::vector<Tokenizer::Token>& toks);
+	void						 parseAuthSwitchDirective(LocationConfigBuilder& builder, std::vector<Tokenizer::Token>& toks);
 	IServerConfig::ErrorPage	 parseErrorPageValue(std::vector<Tokenizer::Token>& toks);
+
 	std::string					 consumeWordToken(const std::string& ctx, std::vector<Tokenizer::Token>& toks);
 	bool						 isAllDigits(const std::string& val) const;
 	std::size_t					 parseSize(const std::string& val) const;
