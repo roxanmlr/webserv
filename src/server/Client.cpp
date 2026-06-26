@@ -6,14 +6,12 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/01 20:23:45 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/24 19:02:22 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/26 06:50:16 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Client.hpp"
 #include "../handler/UploadHandler.hpp"
-#include "../mock/http/HttpRequestMock.cpp"
-#include "../mock/http/HttpResponseMock.cpp"
 
 Client::Client()
 	: fd(-1), state(INIT), serv(NULL), lastActivity(time(NULL)), read_status(READ_OK), read_buffer(""), write_status(WRITE_NOT_START), write_pos(0),
