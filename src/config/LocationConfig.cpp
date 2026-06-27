@@ -159,12 +159,12 @@ std::ostream& operator<<(std::ostream& out, ILocationConfig const& loc) {
 		out << "        root " << loc.getRoot().get() << ";\n";
 	if (!loc.getClientMaxBodySize().empty())
 		out << "        client_max_body_size " << sizeToStr(loc.getClientMaxBodySize().get()) << ";\n";
-	
+
 	if (!loc.getAuthFilename().empty())
 		out << "auth_basic_user_file " << loc.getAuthFilename().get() << ";\n";
 	if (!loc.needsAuthentication())
 		out << "        auth_basic no\n";
-	else 
+	else
 		out << "        auth_basic yes\n";
 	const std::vector<std::string>& idx = loc.getIndexFiles();
 	if (!idx.empty()) {

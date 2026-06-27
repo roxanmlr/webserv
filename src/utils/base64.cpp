@@ -1,20 +1,17 @@
 #include "utils.hpp"
 
-#include <string>
 #include <cctype>
+#include <string>
 
-
-std::string base64_encode(const std::string& input)
-{
-static const char g_base64_table[] =
-	"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	"abcdefghijklmnopqrstuvwxyz"
-	"0123456789+/";
-	std::string output;
-	unsigned char a3[3];
-	unsigned char a4[4];
-	size_t i = 0;
-	size_t len = input.size();
+std::string base64_encode(const std::string& input) {
+	static const char g_base64_table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+										 "abcdefghijklmnopqrstuvwxyz"
+										 "0123456789+/";
+	std::string		  output;
+	unsigned char	  a3[3];
+	unsigned char	  a4[4];
+	size_t			  i	  = 0;
+	size_t			  len = input.size();
 
 	output.reserve(((len + 2) / 3) * 4);
 
@@ -53,8 +50,7 @@ static const char g_base64_table[] =
 	return output;
 }
 
-static int base64_value(unsigned char c)
-{
+static int base64_value(unsigned char c) {
 	if (c >= 'A' && c <= 'Z')
 		return c - 'A';
 	if (c >= 'a' && c <= 'z')
@@ -68,13 +64,12 @@ static int base64_value(unsigned char c)
 	return -1;
 }
 
-bool base64_decode(const std::string& input, std::string& output)
-{
+bool base64_decode(const std::string& input, std::string& output) {
 	output.clear();
 
 	unsigned char a4[4];
 	unsigned char a3[3];
-	size_t i = 0;
+	size_t		  i = 0;
 
 	for (size_t pos = 0; pos < input.size(); ++pos) {
 		unsigned char c = static_cast<unsigned char>(input[pos]);

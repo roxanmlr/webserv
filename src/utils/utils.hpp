@@ -19,5 +19,5 @@
 std::string ft_itoa(int n);
 int			set_nonblocking(int fd);
 std::string base64_encode(const std::string& input);
-bool base64_decode(const std::string& input, std::string& output);
+bool		base64_decode(const std::string& input, std::string& output);
 #endif
