@@ -133,12 +133,13 @@ bool CgiHandler::onOutput() {
 	char bufread[BUFSIZ + 1];
 	bufread[BUFSIZ] = 0;
 	ssize_t readn	= read(outfile[0], bufread, BUFSIZ);
-	if (readn < 0 && !(errno == EAGAIN || errno == EWOULDBLOCK)) {
+	/*if (readn < 0) {
 		read_finished = true;
 		state		  = ERROR;
 		std::cerr << "Host reading terminé suite à erreur\n";
 		closeFdOnError();
-	} else if (readn >= 0) {
+	} else*/
+	if (readn >= 0) {
 		read_finished = readn == 0;
 		if (read_finished) {
 			close(outfile[0]);
@@ -156,12 +157,13 @@ bool CgiHandler::onInput() {
 		return true;
 	}
 	ssize_t written = write(pipefd[1], bufwrite + bufwrite_pos, bufwrite_size - bufwrite_pos);
-	if (written < 0 && !(errno == EAGAIN || errno == EWOULDBLOCK)) {
+	/*if (written < 0) {
 		write_finished = true;
 		state		   = ERROR;
 		std::cerr << "Host writing terminé suite à erreur\n";
 		closeFdOnError();
-	} else if (written >= 0) {
+	} else*/
+	if (written >= 0) {
 		bufwrite_pos += written;
 		write_finished = !(bufwrite_pos < bufwrite_size);
 		if (write_finished) {

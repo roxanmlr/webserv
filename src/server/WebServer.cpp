@@ -189,8 +189,8 @@ void WebServer::serveClient(int epoll_fd, struct epoll_event events[MAX_EVENTS],
 		for (std::map<int, IClient*>::iterator it = cgi_input_map.begin(); it != cgi_input_map.end();) {
 			if (it->second == client_to_del) {
 				std::map<int, IClient*>::iterator del_ = it;
-				cgi_input_map.erase(del_);
 				it++;
+				cgi_input_map.erase(del_);
 				continue;
 			}
 			it++;
@@ -198,8 +198,8 @@ void WebServer::serveClient(int epoll_fd, struct epoll_event events[MAX_EVENTS],
 		for (std::map<int, IClient*>::iterator it = cgi_output_map.begin(); it != cgi_output_map.end();) {
 			if (it->second == client_to_del) {
 				std::map<int, IClient*>::iterator del_ = it;
-				cgi_output_map.erase(del_);
 				it++;
+				cgi_output_map.erase(del_);
 				continue;
 			}
 			it++;
@@ -270,10 +270,10 @@ void WebServer::run() {
 						std::cerr << "Shutting down the server" << std::endl;
 						this->shouldClose();
 						break;
-					} else if (nread == -1 && errno != EAGAIN && errno != EWOULDBLOCK) {
+					}/* else if (nread == -1 && errno != EAGAIN && errno != EWOULDBLOCK) {
 						std::cerr << "hi" << std::endl;
 						// throw WebServerError("recv");
-					}
+					}*/
 				} else if (cgi_input_map.count(fd) > 0) {
 					std::cerr << "Reveil du CGI Input\n";
 					if (cgi_input_map[fd]->onCgiInput()) {
