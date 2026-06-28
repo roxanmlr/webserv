@@ -75,5 +75,8 @@ public:
 	bool	onCgiInput();
 	bool	onCgiOutput();
 	bool	isCgiFinished();
+
+private:
+	void ensureSessionId();
 };
 #endif

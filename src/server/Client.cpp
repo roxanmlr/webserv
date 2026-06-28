@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/01 20:23:45 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/24 19:02:22 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/28 20:24:05 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,8 @@
 #include "../handler/UploadHandler.hpp"
 #include "../mock/http/HttpRequestMock.cpp"
 #include "../mock/http/HttpResponseMock.cpp"
+#include <iomanip>
+#include <sstream>
 
 Client::Client()
 	: fd(-1), state(INIT), serv(NULL), lastActivity(time(NULL)), read_status(READ_OK), read_buffer(""), write_status(WRITE_NOT_START), write_pos(0),
@@ -212,8 +214,10 @@ void Client::onWritable() {
 			}
 		}
 	}
-	if (write_status == WRITE_READY) // TODO check if the CGI is on and is finished
+	if (write_status == WRITE_READY) { // TODO check if the CGI is on and is finished
+		ensureSessionId();
 		write_buffer = response.serialize();
+	}
 	while (write_pos < write_buffer.size()) {
 		const char* data = write_buffer.data() + write_pos;
 		size_t		size = write_buffer.size() - write_pos;
@@ -351,6 +355,43 @@ bool Client::onCgiInput() {
 
 bool Client::onCgiOutput() {
 	return cgiHandler.onOutput();
+}
+
+static bool hasCookieSessionId(HttpRequest const& request) {
+	if (!request.hasHeader("Cookie"))
+		return false;
+	const std::string&	   cookieHeader = request.getHeader("Cookie");
+	std::string::size_type pos			= 0;
+	while (pos < cookieHeader.size()) {
+		while (pos < cookieHeader.size() && cookieHeader[pos] == ' ')
+			pos++;
+		std::string::size_type eqPos = cookieHeader.find('=', pos);
+		if (eqPos == std::string::npos)
+			break;
+		std::string key = cookieHeader.substr(pos, eqPos - pos);
+		while (!key.empty() && key[key.size() - 1] == ' ')
+			key.erase(key.size() - 1);
+		if (key == "session_id")
+			return true;
+		std::string::size_type semicolonPos = cookieHeader.find(';', eqPos);
+		if (semicolonPos == std::string::npos)
+			break;
+		pos = semicolonPos + 1;
+	}
+	return false;
+}
+
+static std::string generateSessionId(int fd) {
+	static unsigned long counter = 0;
+	std::ostringstream	 oss;
+	oss << (unsigned long)(time(NULL) * counter) << (unsigned int)(fd * counter);
+	return oss.str();
+}
+
+void Client::ensureSessionId() {
+	if (hasCookieSessionId(_request))
+		return;
+	response.setHeader("Set-Cookie", "session_id=" + generateSessionId(fd) + "; HttpOnly; Path=/");
 }
 
 bool Client::isCgiFinished() {
