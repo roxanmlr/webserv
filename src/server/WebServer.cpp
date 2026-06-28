@@ -6,13 +6,13 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:49:36 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/21 11:05:22 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/28 19:12:26 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "WebServer.hpp"
 
-WebServer::WebServer() : listen_map(), cgi_input_map(), cgi_output_map(), _shouldClose(false) {
+WebServer::WebServer() : listen_map(), cgi_input_map(), cgi_output_map(), client_cgi_monitor(), _shouldClose(false) {
 }
 
 WebServer::~WebServer() {
@@ -204,6 +204,8 @@ void WebServer::serveClient(int epoll_fd, struct epoll_event events[MAX_EVENTS],
 			}
 			it++;
 		}
+		if (client_cgi_monitor.count(client_to_del) != 0)
+			client_cgi_monitor.erase(client_to_del);
 		delete client_to_del;
 		client_map.erase(client_fd);
 		return;
@@ -248,7 +250,6 @@ void WebServer::run() {
 			}
 		}
 		std::cerr << "Shutdown properly with : \n\t echo \"stop\" | nc -uU " << CLOSE_SOCKET_PATH << std::endl;
-		std::set<IClient*> client_cgi_monitor;
 		for (;;) {
 			int n_events = epoll_wait(epoll_fd, events, MAX_EVENTS, 100);
 			if (n_events == -1) {
@@ -270,10 +271,10 @@ void WebServer::run() {
 						std::cerr << "Shutting down the server" << std::endl;
 						this->shouldClose();
 						break;
-					}/* else if (nread == -1 && errno != EAGAIN && errno != EWOULDBLOCK) {
-						std::cerr << "hi" << std::endl;
-						// throw WebServerError("recv");
-					}*/
+					} /* else if (nread == -1 && errno != EAGAIN && errno != EWOULDBLOCK) {
+						 std::cerr << "hi" << std::endl;
+						 // throw WebServerError("recv");
+					 }*/
 				} else if (cgi_input_map.count(fd) > 0) {
 					std::cerr << "Reveil du CGI Input\n";
 					if (cgi_input_map[fd]->onCgiInput()) {
@@ -306,6 +307,10 @@ void WebServer::run() {
 			for (std::map<int, IClient*>::iterator it = client_map.begin(); it != client_map.end();) {
 				IClient* c = it->second;
 				if (c && c->isTimeOut()) {
+					if (client_cgi_monitor.count(c) != 0) {
+						std::cerr << "CGI TIME OUT\n";
+						client_cgi_monitor.erase(c);
+					}
 					c->onWritable();
 					close(it->first);
 					delete c;
@@ -342,6 +347,7 @@ void WebServer::stop() {
 	for (std::map<int, IClient*>::iterator it = cgi_output_map.begin(); it != cgi_output_map.end(); ++it) {
 		close(it->first);
 	}
+	client_cgi_monitor.clear();
 	cgi_input_map.clear();
 	cgi_output_map.clear();
 	listen_map.clear();

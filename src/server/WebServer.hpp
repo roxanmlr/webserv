@@ -6,7 +6,7 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/05/27 23:49:18 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/20 22:43:23 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/28 19:11:01 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,6 +43,7 @@ private:
 	std::map<int, IClient*>			   client_map;
 	std::map<int, IClient*>			   cgi_input_map;
 	std::map<int, IClient*>			   cgi_output_map;
+	std::set<IClient*>				   client_cgi_monitor;
 	bool							   _shouldClose;
 	int								   shutdown_fd;
 	void							   addClient(int epoll_fd, int server_fd);

@@ -80,13 +80,13 @@ bool CgiHandler::isFinished() {
 			std::cerr << "Client runninng\n";
 			return false;
 		}
-		if (!WIFEXITED(wstatus) || WEXITSTATUS(wstatus) != 0) {
+		/*if (!WIFEXITED(wstatus) || WEXITSTATUS(wstatus) != 0) {
 			std::cerr << "GATEWAY Non null exit status" << std::endl;
 			state = ERROR;
 			pid	  = -1;
 			return true;
 		}
-		std::cerr << "Client terminé\n";
+		std::cerr << "Client terminé\n";*/
 		state = PROCESS_END;
 	}
 	if (read_finished && write_finished) {
@@ -290,11 +290,11 @@ bool CgiHandler::handle(const IHttpRequest& req, const ILocationConfig& loc, IHt
 		(void)res;
 		return false;
 	}
+	std::cout << "Script path: " << script_path << "\n";
 	std::string cgi_script_name = req.getUri();
 	std::size_t qs_pos			= cgi_script_name.find('?');
 	if (qs_pos != std::string::npos)
 		cgi_script_name = cgi_script_name.substr(0, qs_pos);
-
 	if (pipe(pipefd) == -1) {
 		state = ERROR;
 		throw WebServerError("pipe failure");
@@ -327,7 +327,7 @@ bool CgiHandler::handle(const IHttpRequest& req, const ILocationConfig& loc, IHt
 		}
 		const char* path	= cgipass.interpreter.c_str();
 		char*		args[3] = {const_cast<char*>(path), const_cast<char*>(script_path.c_str()), NULL};
-		char**		envp	= build_cgi_env(req, serv, cgi_script_name);
+		char**		envp	= build_cgi_env(req, serv, script_path);
 		if (!envp) {
 			close(pipefd[0]);
 			close(outfile[1]);
@@ -461,6 +461,11 @@ static char** build_cgi_env(const IHttpRequest& req, IServerConfig const* serv, 
 	envvec.push_back("SERVER_PORT=" + server_port);
 	envvec.push_back("SERVER_PROTOCOL=HTTP/1.1");
 	envvec.push_back("SERVER_SOFTWARE=webserv");
+	if (raw_uri.find(".php") != std::string::npos) {
+		envvec.push_back("REDIRECT_STATUS=200");
+		envvec.push_back("SCRIPT_FILENAME=" + script_name);
+		std::cerr << "filename : " << script_name << "\n";
+	}
 
 	for (std::map<std::string, std::string>::const_iterator it = req.getAllHeaders().begin(); it != req.getAllHeaders().end(); ++it) {
 		std::string cgi_name = header_tocgi(it->first);

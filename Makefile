@@ -1,7 +1,7 @@
 NAME		= webserv
 CXX			= clang++ -std=c++98
 DEPFLAGS    = -MMD -MP
-#SAN			= -fsanitize=address,undefined
+SAN			= -fsanitize=address,undefined
 #SAN			= -fsanitize=address
 CXXFLAGS	= -Wall -Wextra -Werror $(SAN) -g $(DEPFLAGS)
 # To update sources
