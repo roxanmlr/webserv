@@ -1,2 +1,0 @@
-Verifier que les reste du buffer de HTTPRequest sont bien recuperer un niveau au dessus pour eviter un timeout
-apres que le HTTPREQUEST a dit complete, creer une nouvelle requete avec les restes du buffer
