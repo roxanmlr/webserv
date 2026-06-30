@@ -52,7 +52,12 @@ bool StaticFileHandler::handle(const IHttpRequest& req, const ILocationConfig& l
 		rootPath = loc.getRoot().get();
 	std::string path = rootPath + req.getUri();
 	// check for the index path if its a directory from the vector in the config file
-	if (!path.empty() && path[path.length() - 1] == '/') {
+	while (!path.empty()) {
+		struct stat filetype;
+		if (stat(path.c_str(), &filetype) == -1)
+			break;
+		if (!S_ISDIR(filetype.st_mode))
+			break;
 		const std::vector<std::string>& index	   = loc.getIndexFiles();
 		bool							indexFound = false;
 		for (std::vector<std::string>::const_iterator it = index.begin(); it != index.end(); ++it) {
@@ -81,11 +86,11 @@ bool StaticFileHandler::handle(const IHttpRequest& req, const ILocationConfig& l
 				generateDirectoryListing(path, req.getUri(), res);
 				return (true);
 			} else {
-				res.setStatus(403);
 				HttpResponse::applyErrorPage(res, 403, serv);
 				return (true);
 			}
 		}
+		break;
 	}
 	// now we have to construct de response by opening the file found
 	std::ifstream file(path.c_str());
@@ -110,7 +115,12 @@ void StaticFileHandler::generateDirectoryListing(const std::string& path, const 
 	}
 
 	std::stringstream ss;
-	ss << "<html><head><title>Index of " << uri << "</title></head><body>";
+	ss << "<html><head>";
+	ss << "<title>Index of " << uri << "</title>";
+	ss << "<base href=\"" << uri;
+	if (uri[uri.size() - 1] != '/')
+		ss << "/";
+	ss << "\"/></head><body>";
 	ss << "<h1>Index of " << uri << "</h1><hr><pre>";
 	struct dirent* entry;
 	while ((entry = readdir(dir)) != NULL) {

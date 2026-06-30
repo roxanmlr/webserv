@@ -24,8 +24,8 @@ fclean: clean
 re: fclean all
 .PHONY : all clean fclean re
 
-#format: update-sources
-#	find . \( -name '*.hpp' -o -name '*.cpp' -o -name '*.tpp' \) -exec clang-format -i {} +
+format: 
+	find . \( -name '*.hpp' -o -name '*.cpp' -o -name '*.tpp' \) -exec clang-format -i {} +
 #f: format
 #update-sources: $(wildcard src/*/*.cpp)
 #	@sed -i 's|^SOURCES.*|SOURCES = $(filter-out %/test% test%, $(wildcard *.cpp  */*.cpp  */*/*.cpp ))|' Makefile

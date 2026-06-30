@@ -47,22 +47,19 @@ bool DeleteHandler::handle(const IHttpRequest& req, const ILocationConfig& loc, 
 
 	struct stat file;
 	if (stat(path.c_str(), &file) == -1) {
-		res.setStatus(404);
-		res.setBody("<h1>404 Not Found</h1>");
+		HttpResponse::applyErrorPage(res, 404, serv);
 		return (true);
 	}
 
 	if (S_ISDIR(file.st_mode)) {
-		res.setStatus(403);
-		res.setBody("<h1>403 Forbidden: Cannot delete directory</h1>");
+		HttpResponse::applyErrorPage(res, 403, serv);
 		return (true);
 	}
 
 	if (unlink(path.c_str()) == 0)
 		res.setStatus(204);
 	else {
-		res.setStatus(403);
-		res.setBody("<h1>403 Forbidden: Cannot delete file</h1>");
+		HttpResponse::applyErrorPage(res, 403, serv);
 	}
 	return (true);
 }

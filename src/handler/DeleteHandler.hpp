@@ -12,6 +12,7 @@
 
 #pragma once
 
+#include "../http/HttpResponse.hpp"
 #include "IRequestHandler.hpp"
 
 class DeleteHandler : public IRequestHandler {
