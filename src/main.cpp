@@ -44,6 +44,8 @@ int main(int argc, char* argv[]) {
 		webServer->run();
 	} catch (const WebServerError& e) {
 		std::cerr << "Failed to launch config with error :" << e.what() << std::endl;
+	} catch(const std::runtime_error& e){
+		std::cerr << "Failed to launch config with error:" << e.what() << std::endl;
 	}
 	delete webServer;
 }

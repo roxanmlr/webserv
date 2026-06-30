@@ -6,14 +6,12 @@
 /*   By: lmilando <lmilando@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/06/01 20:23:45 by lmilando          #+#    #+#             */
-/*   Updated: 2026/06/28 20:24:05 by lmilando         ###   ########.fr       */
+/*   Updated: 2026/06/30 18:01:44 by lmilando         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Client.hpp"
 #include "../handler/UploadHandler.hpp"
-#include "../mock/http/HttpRequestMock.cpp"
-#include "../mock/http/HttpResponseMock.cpp"
 #include <iomanip>
 #include <sstream>
 

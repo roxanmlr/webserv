@@ -297,20 +297,20 @@ bool CgiHandler::handle(const IHttpRequest& req, const ILocationConfig& loc, IHt
 		cgi_script_name = cgi_script_name.substr(0, qs_pos);
 	if (pipe(pipefd) == -1) {
 		state = ERROR;
-		throw WebServerError("pipe failure");
+		return false;
 	}
 	if (pipe(outfile) == -1) {
 		close(pipefd[0]);
 		close(pipefd[1]);
 		state = ERROR;
-		throw WebServerError("pipe failure");
+		return false;
 	}
 	int pid = fork();
 	if (pid == -1) {
 		close(pipefd[0]);
 		close(pipefd[1]);
 		state = ERROR;
-		throw WebServerError("fork failure");
+		return false;
 	}
 	if (!pid) {
 		close(pipefd[1]);
@@ -350,7 +350,6 @@ bool CgiHandler::handle(const IHttpRequest& req, const ILocationConfig& loc, IHt
 	bufwrite_pos   = 0;
 	write_finished = false;
 	read_finished  = false;
-	std::cerr << "CGI Lancé\n";
 	return true;
 }
 

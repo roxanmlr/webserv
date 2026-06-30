@@ -1,184 +1,293 @@
 _This project has been created as part of the 42 curriculum by lmilando and mzouhir._
 # Description
 
-Ce projet ecrit en C++98 nous a permis de nous initier au Web ainsi qu'au protocole HTTP et à nous exercer au C++ dans le cadre d'un projet complexe.
-Il nous a permis notamment de mieux architecturer en decrivant le produit logiciel à partir d'une specification à savoir le RFC.
+This project, written in C++98, allowed us to introduce ourselves to the Web and the HTTP protocol, and to practice C++ within a complex project.
+It notably helped us improve our architectural skills by defining the software product based on a specification, specifically the RFC.
 
-## Table des matieres
-- [Vue d'ensemble](#vue-densemble)
-- [Organisation des fichiers](#organisation-des-fichiers)
-- [Modules et interfaces](#modules-et-interfaces)
-- [Flux d'une requête](#flux-dune-requête)
-- [Points critiques du sujet](#points-critiques-du-sujet)
+## Table of Contents
+- [Overview](#overview)
+- [File Organization](#file-organization)
+- [Modules and Interfaces](#modules-and-interfaces)
+- [Request Flow](#request-flow)
+- [Critical Points of the Subject](#critical-points-of-the-subject)
 
 ---
 
-## Vue d'ensemble
+## Overview
 
-L'architecture repose sur des **modules = une interface abstraite + une (ou plusieurs) implementation(s) concrète(s)**. Cela permet :
-- de découpler les modules ;
-- de tester chaque module independamment (mocks faciles);
-- d'ajouter de nouveaux handlers (par méthode, par type de ressource) sans toucher au reste.
+The architecture relies on **modules = an abstract interface + one (or more) concrete implementation(s)**. This allows:
+- Decoupling modules;
+- Testing each module independently (easy mocks);
+- Adding new handlers (by method, by resource type) without touching the rest.
 
-L'orchestrateur unique (`WebServer`) possède la seule et unique bouble `poll()`. Tous les I\O réseau (sockets d'écoute, sockets clients, pipes CGI) passent par ce poll.
+The single orchestrator (`WebServer`) holds the one and only `epoll()` loop. All network I/O (listening sockets, client sockets, CGI pipes) goes through this epoll.
+
 ```
+
 main.cpp
-  └── IConfigParser → IConfig
-  └── IWebServer (orchestrateur, possède le poll loop)
-  		├── IServerSocket[] (un par port en écoute)
-        ├── IClient[]         (connexions actives)
-        │   ├── IHttpRequest (parser incremental)
-        │ 	└── IHttpResponse (builder)
-        ├── IRequestHandler (dispatch GET / POST / DELETE)
-        ├── ICgiHandler       (CGI classique via fork+execve)
+└── IConfigParser → IConfig
+└── IWebServer (orchestrator, holds the epoll loop)
+├── IServerSocket[] (one per listening port)
+├── IClient[]       (active connections)
+│   ├── IHttpRequest (incremental parser)
+│   └── IHttpResponse (builder)
+├── IRequestHandler (dispatch GET / POST / DELETE)
+└── ICgiHandler       (classic CGI via fork+execve)
+
 ```
 
 ---
-## Organisation des fichiers
+## File Organization
 
-Chaque module suit la convention : `IModule.hpp` (interface) + `Module.hpp/.cpp` (implementation)
+Each module follows the convention: `IModule.hpp` (interface) + `Module.hpp/.cpp` (implementation)
+
 ```
-webserv/
+
+.
+├── config
+│   ├── bad
+│   │   ├── allow_methods_duplicate_method.conf
+│   │   ├── allow_methods_no_method.conf
+│   │   ├── allow_methods_unknown_method.conf
+│   │   ├── autoindex_invalid_value.conf
+│   │   ├── cgi_pass_duplicate_extension.conf
+│   │   ├── cgi_pass_missing_interpreter.conf
+│   │   ├── client_max_body_size_duplicate.conf
+│   │   ├── client_max_body_size_invalid_suffix.conf
+│   │   ├── client_max_body_size_invalid_value.conf
+│   │   ├── error_page_missing_code.conf
+│   │   ├── fastcgi_param_duplicate_key.conf
+│   │   ├── fastcgi_pass_duplicate.conf
+│   │   ├── index_duplicate.conf
+│   │   ├── listen_invalid_port.conf
+│   │   ├── listen_port_zero.conf
+│   │   ├── location_duplicate.conf
+│   │   ├── location_missing_opening_brace.conf
+│   │   ├── location_regex_modifier_unsupported.conf
+│   │   ├── missing_semicolon.conf
+│   │   ├── missing_server_closing_brace.conf
+│   │   ├── missing_server_opening_brace.conf
+│   │   ├── no_server_block.conf
+│   │   ├── return_duplicate.conf
+│   │   ├── return_non_integer_code.conf
+│   │   ├── root_duplicate.conf
+│   │   ├── server_listening_same_port.conf
+│   │   ├── server_name_duplicate.conf
+│   │   ├── unexpected_token_after_server.conf
+│   │   ├── unknown_location_directive.conf
+│   │   ├── unknown_server_directive.conf
+│   │   └── upload_store_duplicate.conf
+│   ├── default.conf
+│   ├── docker.conf
+│   └── simple.conf
 ├── Makefile
 ├── README.md
-├── config/
-│   └── default.conf
-├── src/
-│   ├── main.cpp
-│   ├── config/
+├── site
+│   └── cgi-bin
+│       ├── hello_p.py
+│       ├── hello.py
+│       ├── sleep.py
+│       ├── test.php
+│       └── t.php
+├── src
+│   ├── cgi
+│   │   ├── CgiHandler.cpp
+│   │   ├── CgiHandler.hpp
+│   │   └── ICgiHandler.hpp
+│   ├── config
+│   │   ├── Config.cpp
+│   │   ├── ConfigError.cpp
+│   │   ├── ConfigError.hpp
+│   │   ├── Config.hpp
+│   │   ├── ConfigParser.cpp
+│   │   ├── ConfigParser.hpp
+│   │   ├── IConfig.cpp
 │   │   ├── IConfig.hpp
 │   │   ├── IConfigParser.hpp
-│   │   ├── Config.cpp / .hpp
-│   │   └── ConfigParser.cpp / .hpp
-│   ├── server/
-│   │   ├── IWebServer.hpp
-│   │   ├── IServerSocket.hpp
-│   │   ├── IClient.hpp
-│   │   ├── WebServer.cpp / .hpp
-│   │   ├── ServerSocket.cpp / .hpp
-│   │   └── Client.cpp / .hpp
-│   ├── http/
-│   │   ├── IHttpRequest.hpp
-│   │   ├── IHttpResponse.hpp
-│   │   ├── HttpRequest.cpp / .hpp
-│   │   ├── HttpResponse.cpp / .hpp
-│   │   └── StatusCodes.cpp / .hpp
-│   ├── handler/
+│   │   ├── ILocationConfig.hpp
+│   │   ├── IServerConfig.hpp
+│   │   ├── LocationConfigBuilder.cpp
+│   │   ├── LocationConfigBuilder.hpp
+│   │   ├── LocationConfig.cpp
+│   │   ├── LocationConfig.hpp
+│   │   ├── ServerConfigBuilder.cpp
+│   │   ├── ServerConfigBuilder.hpp
+│   │   ├── ServerConfig.cpp
+│   │   ├── ServerConfig.hpp
+│   │   ├── Tokenizer.cpp
+│   │   └── Tokenizer.hpp
+│   ├── fastcgi
+│   │   ├── IFastCgiClient.hpp
+│   │   └── IFastCgiProtocol.hpp
+│   ├── handler
+│   │   ├── DeleteHandler.cpp
+│   │   ├── DeleteHandler.hpp
 │   │   ├── IRequestHandler.hpp
-│   │   ├── RequestHandler.cpp / .hpp
-│   │   ├── StaticFileHandler.cpp / .hpp
-│   │   └── UploadHandler.cpp / .hpp
-│   ├── cgi/
-│   │   ├── ICgiHandler.hpp
-│   │   └── CgiHandler.cpp / .hpp
-│   └── utils/
-│       ├── ILogger.hpp
-│       ├── Logger.cpp / .hpp
-│       ├── StringUtils.cpp / .hpp
-│       └── FileUtils.cpp / .hpp
+│   │   ├── RedirectionHandler.cpp
+│   │   ├── RedirectionHandler.hpp
+│   │   ├── StaticFileHandler.cpp
+│   │   ├── StaticFileHandler.hpp
+│   │   ├── UploadHandler.cpp
+│   │   └── UploadHandler.hpp
+│   ├── http
+│   │   ├── HttpRequest.cpp
+│   │   ├── HttpRequest.hpp
+│   │   ├── HttpResponse.cpp
+│   │   ├── HttpResponse.hpp
+│   │   ├── IHttpRequest.hpp
+│   │   └── IHttpResponse.hpp
+│   ├── main.cpp
+│   ├── server
+│   │   ├── Client.cpp
+│   │   ├── Client.hpp
+│   │   ├── IClient.hpp
+│   │   ├── IWebServer.hpp
+│   │   ├── WebServer.cpp
+│   │   ├── WebServerError.cpp
+│   │   ├── WebServerError.hpp
+│   │   └── WebServer.hpp
+│   └── utils
+│       ├── ft_itoa.cpp
+│       ├── Logger.cpp
+│       ├── Logger.hpp
+│       ├── Optional.tpp
+│       ├── set_nonblocking.cpp
+│       └── utils.hpp
+├── tests
+│   ├── cgi_test.sh
+│   ├── mass_test_ab.sh
+│   ├── mass_test_siege.sh
+│   ├── mass_test_wrk.sh
+│   ├── test_bad_conf.sh
+│   └── test_basic_ping.sh
+└── webserv
 
 ```
-## Modules et interfaces
-### Module Config
+## Modules and Interfaces
+### Config Module
 #### `IConfigParser`
-Charges un fichier de configuration et produis un `IConfig`. Expose une seule méthode `parse(path)` qui retourne un pointeur vers `IConfig`. Utilisé uniquement par `main.cpp` au démarrage.
+Loads a configuration file and produces an `IConfig`. Exposes a single method `parse(path)` that returns a pointer to `IConfig`. Used only by `main.cpp` at startup.
 
 #### `IConfig`
-Representes la configuration chargée. Donnes accès aux `IServerConfig` (un par bloc `server`), avec leurs `LocationConfig` (un par bloc `location`). Permet à `IWebServer` de résoudre le bon bloc serveur depuis le header `Host` via `findServer(host, port)`.
+Represents the loaded configuration. Gives access to `IServerConfig` (one per `server` block), with their `LocationConfig` (one per `location` block). Allows `IWebServer` to resolve the correct server block from the `Host` header via `findServer(host, port)`.
 
-`IServerConfig` contient : ports, `server_name`, pages d'erreur, `client_max_body_size`, liste de `LocationConfig`.
-`LocationConfig` contient : `root`, `index`, méthodes autorisées, `autoindex`, redirections, parametres CGI, chemin d'upload.
+`IServerConfig` contains: ports, `server_name`, error pages, `client_max_body_size`, list of `LocationConfig`.
+`LocationConfig` contains: `root`, `index`, allowed methods, `autoindex`, redirections, CGI parameters, upload path.
 
 ---
 
-### Module Server
+### Server Module
 #### `IWebServer`
-Reçoit un `IConfig` à l'initialisation. Crée les `ListenConfig` pour chaque paire `host:port` unique, puis entre dans la boucle `epoll_wait()` infinie via `run()`. Dispatche les événements vers les `IClient`, les `ICgiHandler` selon le type de fd.
+Receives an `IConfig` at initialization. Creates the `ListenConfig` for each unique `host:port` pair, then enters the infinite `epoll_wait()` loop via `run()`. Dispatches events to `IClient` and `ICgiHandler` depending on the fd type.
 
 #### `WebServer::ListenConfig`
-Structure interne de `WebServer` qui wrappre un socket en état `LISTEN`, le `host:port` associe ainsi que `IServerConfig` associés pour que `IWebServer` sache quels blocs serveur s'appliquent sur ce port.
+Internal structure of `WebServer` that wraps a socket in a `LISTEN` state, its associated `host:port`, as well as the associated `IServerConfig` so that `IWebServer` knows which server blocks apply to this port.
 
-Setup : `socket()` → `setsockopt(SO_REUSEADDR)` → `fcntl(O_NONBLOCK)` → `bind()` → `listen()`.
+Setup: `socket()` → `setsockopt(SO_REUSEADDR)` → `fcntl(O_NONBLOCK)` → `bind()` → `listen()`.
 
 #### `IClient`
-Représente une connexion HTTP active. `IWebServer` l'appelle sur `onReadable()` (POLLIN) et `onWritable()` (POLLOUT). L'état interne (`READING_HEADERS`, `READING_BODY`, `PROCESSING`, `WRITING`, `CLOSING`) détermine ce que retournent `wantsRead()`, `wantsWrite()` et `shouldClose()`, permettant à `IWebServer` de mettre à jour le masque `pollfd` sans connaître le détail du protocole HTTP.
+Represents an active HTTP connection. `IWebServer` calls it on `onReadable()` (POLLIN) and `onWritable()` (POLLOUT). The internal state (`READING_HEADERS`, `READING_BODY`, `PROCESSING`, `WRITING`, `CLOSING`) determines what `wantsRead()`, `wantsWrite()`, and `shouldClose()` return, allowing `IWebServer` to update the `pollfd` mask without knowing the details of the HTTP protocol.
 
-### Module HTTP
+### HTTP Module
 #### `IHttpRequest`
-Parser **incrémental** : les données arrivent en morceaux via poll. `feed(data, len)` accumule les octets et retourne `INCOMPLETE`, `COMPLETE` ou `PARSE_ERROR`. Une fois `COMPLETE`, `IClient` peut interroger `getMethod()`, `getUri()`, `getHeader()` et `getBody()` pour construire la réponse via `IRequestHandler`.
+**Incremental** parser: data arrives in chunks via epoll. `feed(data, len)` accumulates bytes and returns `INCOMPLETE`, `COMPLETE`, or `PARSE_ERROR`. Once `COMPLETE`, `IClient` can query `getMethod()`, `getUri()`, `getHeader()`, and `getBody()` to build the response via `IRequestHandler`.
 
-États internes : request line → headers → body (gestion `Content-Length` **et** `Transfer-Encoding: chunked`).
+Internal states: request line → headers → body (handles `Content-Length` **and** `Transfer-Encoding: chunked`).
 
 #### `IHttpResponse`
-Builder de réponse HTTP. `IRequestHandler` appelle `setStatus()`, `setHeader()` et `setBody()`, puis `IClient` sérialise le tout via `serialize()` pour l'envoyer au socket. Gères les headers obligatoires : `Date`, `Server`, `Content-Length` ou `Transfer-Encoding`, `Connection`.
+HTTP response builder. `IRequestHandler` calls `setStatus()`, `setHeader()`, and `setBody()`, then `IClient` serializes everything via `serialize()` to send it to the socket. Handles mandatory headers: `Date`, `Server`, `Content-Length` or `Transfer-Encoding`, `Connection`.
 
-### Module Handler
+### Handler Module
 #### `IRequestHandler`
-Interface commune à tous les handlers. `IWebServer` (via le dispatcher `RequestHandler`) appelle d'abord `canHandle(req, loc)` sur chaque handler enregistré, puis délègue à `handle(req, loc, res)` au premier qui accepte. La réponse est construite directement dans le `IHttpResponse` fourni.
+Common interface for all handlers. `IWebServer` (via the `RequestHandler` dispatcher) first calls `canHandle(req, loc)` on each registered handler, then delegates to `handle(req, loc, res)` on the first one that accepts. The response is built directly into the provided `IHttpResponse`.
 
-Implémentations concrètes :
-- **`StaticFileHandler`** : GET sur fichier, autoindex, MIME types.
-- **`UploadHandler`** : POST avec `multipart/form-data` ou body brut.
-- **`DeleteHandler`** : DELETE sur ressource.
-- **`RedirectHandler`** : `return 301/302` configuré.
-- **`CgiHandler`** : exécution CGI classique (fork + execve).
+Concrete implementations:
+- **`StaticFileHandler`**: GET on files, autoindex, MIME types.
+- **`UploadHandler`**: POST with `multipart/form-data` or raw body.
+- **`DeleteHandler`**: DELETE on a resource.
+- **`RedirectionHandler`**: Configured `return 301/302`.
+- **`CgiHandler`**: Classic CGI execution (fork + execve).
 
-Le `RequestHandler` principal (le dispatcher) tient la liste des handlers et délègue au premier dont `canHandle()` renvoie `true`. Vérifications préalables : méthode autorisée (sinon `405`), taille body (sinon `413`).
+The `Client` keeps the list of handlers and delegates to the first one whose `canHandle()` returns `true`.
 
-### Module CGI
+### CGI Module
 
 #### `ICgiHandler`
-Étend `IRequestHandler`. En plus de `handle()`, expose `getInputFd()` et `getOutputFd()` (les deux pipes) afin que `IWebServer` les ajoute au tableau `pollfd`. `onInputWritable()` est appelé sur `POLLOUT` du pipe stdin (envoi du body POST), `onOutputReadable()` sur `POLLIN` du pipe stdout (lecture de la réponse CGI). Quand `isFinished()` passe à `true`, `IWebServer` retire les pipes du poll et réveille le `IClient` HTTP.
+Extends `IRequestHandler`. In addition to `handle()`, it exposes `getInputFd()` and `getOutputFd()` (the two pipes) so that `IWebServer` can add them to the `pollfd` array. `onInputWritable()` is called on `POLLOUT` of the stdin pipe (sending the POST body), `onOutputReadable()` on `POLLIN` of the stdout pipe (reading the CGI response). When `isFinished()` becomes `true`, `IWebServer` removes the pipes from the epoll and wakes up the HTTP `IClient`.
 
-Workflow :
-1. Crée deux `pipe()`, les marque `O_NONBLOCK`.
-2. `fork()` puis dans l'enfant : `dup2()` + `execve()` du binaire (`php-cgi`, `python`, …).
-3. Les pipes sont ajoutés au `poll()` principal — mappés vers le `IClient` qui attend.
-4. Le processus CGI lui-même n'est pas dans poll (`waitpid` non-bloquant ou `SIGCHLD`).
+Workflow:
+1. Creates two `pipe()` calls, marks them `O_NONBLOCK`.
+2. `fork()` then in the child: `dup2()` + `execve()` of the binary (`php-cgi`, `python`, …).
+3. Pipes are added to the main `epoll()` — mapped to the waiting `IClient`.
+4. The CGI process itself is not in epoll (`non-blocking waitpid` or `SIGCHLD`).
 
 ---
 
-### Module Utils
+### Utils Module
 
 #### `ILogger`
-Permet de brancher facilement un logger fichier, stderr, ou silencieux pour les tests. Expose une seule méthode `log(level, msg)` avec les niveaux `DEBUG`, `INFO`, `WARN`, `ERROR`. Injecté par dépendance dans tous les modules qui en ont besoin, ce qui permet aux tests d'utiliser un `MockLogger` silencieux.
+Allows easily plugging in a file logger, stderr, or a silent logger for tests. Exposes a single method `log(level, msg)` with levels `DEBUG`, `INFO`, `WARN`, `ERROR`. Injected by dependency into all modules that need it, allowing tests to use a silent `MockLogger`.
 
 ---
 
-## Flux d'une requête
+## Request Flow
 
-### Requête statique
-1. `poll()` retourne, un `IServerSocket` a `POLLIN` → `acceptClient()` → créer un `IClient`, l'ajouter au poll en `POLLIN`.
-2. `POLLIN` sur le fd du client → `client.onReadable()` → en interne : `recv()` + `request.feed(buffer)`.
-3. Quand `feed()` renvoie `COMPLETE` → résoudre le `IServerConfig` (via header `Host`) → dispatcher vers le `IRequestHandler` qui matche → la réponse est sérialisée dans le write buffer → `wantsWrite()` devient `true` → le `WebServer` met le fd en `POLLOUT`.
-4. `POLLOUT` → `client.onWritable()` → `send()` ce qu'on peut. Quand tout est envoyé : si keep-alive, reset l'état et repasse en `POLLIN` ; sinon `shouldClose()` devient `true` et le `WebServer` ferme.
+### Static Request
+1. `epoll()` returns, an `IServerSocket` has `POLLIN` → `acceptClient()` → create an `IClient`, add it to the epoll in `POLLIN`.
+2. `POLLIN` on the client fd → `client.onReadable()` → internally: `recv()` + `request.feed(buffer)`.
+3. When `feed()` returns `COMPLETE` → resolve the `IServerConfig` (via `Host` header) → dispatch to the matching `IRequestHandler` → response is serialized into the write buffer → `wantsWrite()` becomes `true` → `WebServer` puts the fd in `POLLOUT`.
+4. `POLLOUT` → `client.onWritable()` → `send()` what we can. When everything is sent: if keep-alive, reset the state and go back to `POLLIN`; otherwise `shouldClose()` becomes `true` and `WebServer` closes.
 
 ---
 
-## Points critiques du sujet
+## Critical Points of the Subject
 
-### Un seul `poll()`
-Pas un poll par thread, pas un poll pour les clients et un autre pour les CGI. Tout dans le même tableau de `pollfd`. D'où l'importance de la map `fd → ConnectionType*` qui distingue : listen socket, client HTTP, pipe CGI.
+### Single `epoll()`
+Not one epoll per thread, not one epoll for clients and another for CGIs. Everything is in the same `pollfd` array. Hence the importance of the `fd → ConnectionType*` map which distinguishes: listen socket, HTTP client, CGI pipe.
 
-### Non-bloquant partout
-Tous les sockets (listen, accept, pipes CGI) sont marqués `O_NONBLOCK` **dès leur création**.
+### Non-blocking Everywhere
+All sockets (listen, accept, CGI pipes) are marked `O_NONBLOCK` **right from their creation**.
 
-### Parsing du body
-Ne pas lire `Content-Length` bytes d'un coup. Lire ce que `recv` donne, accumuler, et ne considérer la requête complète qu'à la bonne taille. Idem pour le chunked encoding.
+### Body Parsing
+Do not read `Content-Length` bytes all at once. Read what `recv` provides, accumulate, and consider the request complete only at the correct size. Same applies for chunked encoding.
 
-### CGI et `POLLOUT`
-Si le backend attend du stdin (POST body), le pipe/socket **vers** le backend doit aussi être dans poll en `POLLOUT`. Sinon deadlock possible si le body est gros.
+### CGI and `POLLOUT`
+If the backend is waiting for stdin (POST body), the pipe/socket **to** the backend must also be in epoll in `POLLOUT`. Otherwise, a deadlock is possible if the body is large.
 
 ### Timeouts
-Aucune requête ne doit hang indéfiniment. `last_activity` par client **et**, fermeture au-delà d'un seuil.
+No request should hang indefinitely. `last_activity` tracking per client, and closing beyond a certain threshold.
 
 
 # Instructions
 
 > make
+
+Modify the configuration file to match your website's root path.
+
 > ./webserv [configuration file]
 
-Si aucun fichier n'est fourni, le serveur charge `config/default.conf`.
+If no file is provided, the server loads `config/default.conf`.
+
+You can also use the following commands:
+> make clean # clean the project
+> make fclean # clean and delete the executable
+> make re # cleanly rebuild the project
 
 
 # Resources
+
+We used the following resources:
+1. https://nginx.org/en/docs/
+2. https://developer.mozilla.org/fr/docs/Web/HTTP/Reference/Status
+3. https://datatracker.ietf.org/doc/html/rfc1945
+4. http://manpagesfr.free.fr/man/man7/epoll.7.html
+5. https://www.geeksforgeeks.org/computer-networks/simple-client-server-application-in-c/
+
+## AI Usage
+During this project, AI was used strictly as a support tool for learning and translating:
+
+**Documentation**: AI was used to help structure, format, and translate this README file.
+
+**Important Note**: Absolutely no code was generated by AI. All the code and algorithmic implementations in this project were entirely written by us.
+
+```

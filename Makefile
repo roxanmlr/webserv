@@ -1,6 +1,6 @@
 NAME		= webserv
-CXX			= clang++ -std=c++98
-DEPFLAGS    = -MMD -MP
+CXX			= c++ -std=c++98
+#DEPFLAGS    = -MMD -MP
 #SAN			= -fsanitize=address,undefined
 #SAN			= -fsanitize=address
 CXXFLAGS	= -Wall -Wextra -Werror $(SAN) -g $(DEPFLAGS)
@@ -17,7 +17,7 @@ objs/%.o:src/%.cpp
 	mkdir  -p "$$(dirname $@)"
 	$(CXX) $(CXXFLAGS) -c -o $@ $^
 clean:
-	rm -rf $(OBJECTS)
+	rm -rf objs/
 	rm -f update-sources
 fclean: clean
 	rm -rf $(NAME)
@@ -29,7 +29,7 @@ re: fclean all
 #f: format
 #update-sources: $(wildcard src/*/*.cpp)
 #	@sed -i 's|^SOURCES.*|SOURCES = $(filter-out %/test% test%, $(wildcard *.cpp  */*.cpp  */*/*.cpp ))|' Makefile
-#	touch update-sources
+	#touch update-sources
 #
 #us: update-sources
 #
