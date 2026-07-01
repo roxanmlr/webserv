@@ -18,7 +18,6 @@ objs/%.o:src/%.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $^
 clean:
 	rm -rf objs/
-	rm -f update-sources
 fclean: clean
 	rm -rf $(NAME)
 re: fclean all

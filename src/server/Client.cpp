@@ -69,7 +69,7 @@ void Client::onReadable() {
 		return;
 	char tmp[4096];
 	while (1) {
-		if ((serv && !serv->getClientMaxBodySize().empty() && read_buffer.size() >= serv->getClientMaxBodySize().get()) || read_buffer.size() >= (1 << 18)) {
+		if ((serv && !serv->getClientMaxBodySize().empty() && read_buffer.size() > 2 * serv->getClientMaxBodySize().get()) || read_buffer.size() >= (1 << 18)) {
 			read_buffer.clear();
 			read_status		   = READ_OVERFLOW;
 			this->write_status = WRITE_READY;
@@ -133,6 +133,8 @@ void Client::onWritable() {
 				HttpResponse::applyErrorPage(response, 400, serv);
 				break;
 			}
+			if (!serv->getClientMaxBodySize().empty() && _request.getBody().size() > serv->getClientMaxBodySize().get())
+				read_status = READ_OVERFLOW;
 			if (read_status == READ_OVERFLOW) {
 				response.setStatus(413);
 				HttpResponse::applyErrorPage(response, 413, serv);
@@ -229,6 +231,9 @@ void Client::onWritable() {
 		if (n == 0) {
 			write_status = WRITE_AGAIN;
 			break;
+		}
+		if (n == -1) {
+			// Nothing to be done
 		}
 		write_status = WRITE_AGAIN;
 		break;

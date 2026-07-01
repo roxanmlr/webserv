@@ -133,12 +133,9 @@ bool CgiHandler::onOutput() {
 	char bufread[BUFSIZ + 1];
 	bufread[BUFSIZ] = 0;
 	ssize_t readn	= read(outfile[0], bufread, BUFSIZ);
-	/*if (readn < 0) {
-		read_finished = true;
-		state		  = ERROR;
-		std::cerr << "Host reading terminé suite à erreur\n";
-		closeFdOnError();
-	} else*/
+	if (readn == -1) {
+		// Nothing to be done, Timeout is handled by webserv
+	}
 	if (readn >= 0) {
 		read_finished = readn == 0;
 		if (read_finished) {

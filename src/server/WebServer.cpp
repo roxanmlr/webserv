@@ -271,10 +271,9 @@ void WebServer::run() {
 						std::cerr << "Shutting down the server" << std::endl;
 						this->shouldClose();
 						break;
-					} /* else if (nread == -1 && errno != EAGAIN && errno != EWOULDBLOCK) {
-						 std::cerr << "hi" << std::endl;
-						 // throw WebServerError("recv");
-					 }*/
+					} else if (nread == -1) {
+						// Nothing to be done
+					}
 				} else if (cgi_input_map.count(fd) > 0) {
 					std::cerr << "Reveil du CGI Input\n";
 					if (cgi_input_map[fd]->onCgiInput()) {

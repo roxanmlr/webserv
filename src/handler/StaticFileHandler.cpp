@@ -46,11 +46,21 @@ bool StaticFileHandler::canHandle(const IHttpRequest& req, const ILocationConfig
 
 bool StaticFileHandler::handle(const IHttpRequest& req, const ILocationConfig& loc, IHttpResponse& res, IServerConfig const* serv) {
 	std::string rootPath("");
+	std::string uri = req.getUri();
 	if (!serv->getRootDir().empty())
 		rootPath = serv->getRootDir().get();
-	if (!loc.getRoot().empty())
+	if (!loc.getRoot().empty()) {
 		rootPath = loc.getRoot().get();
-	std::string path = rootPath + req.getUri();
+		std::cerr << "Uri: " << uri << "," << loc.getPath() << "\n";
+		if (uri.size() >= loc.getPath().size()) {
+			uri.erase(0, loc.getPath().size());
+			if (uri[0] != '/')
+				uri = "/" + uri;
+		}
+		std::cerr << "Uri: " << uri << "\n";
+	}
+	std::string path = rootPath + uri;
+	std::cerr << "Path : " << path << "\n";
 	// check for the index path if its a directory from the vector in the config file
 	while (!path.empty()) {
 		struct stat filetype;
