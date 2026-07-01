@@ -11,6 +11,8 @@ OBJECTS = $(patsubst src/%.cpp, objs/%.o,$(SOURCES))
 
 all: $(NAME)
 
+bonus: all
+
 $(NAME): $(OBJECTS)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 objs/%.o:src/%.cpp
@@ -21,7 +23,7 @@ clean:
 fclean: clean
 	rm -rf $(NAME)
 re: fclean all
-.PHONY : all clean fclean re
+.PHONY : all clean fclean re bonus
 
 format: 
 	find . \( -name '*.hpp' -o -name '*.cpp' -o -name '*.tpp' \) -exec clang-format -i {} +
