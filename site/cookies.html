@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cookie Session ID Showcase</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+        h1 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .session-box {
+            background-color: #eef2f7;
+            border: 1px solid #d0d7de;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 16px;
+            color: #0969da;
+            word-break: break-all;
+            margin-bottom: 20px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>Current Session ID</h1>
+    <div id="session-display" class="session-box">Loading...</div>
+</div>
+
+<script>
+    // Function to get a specific cookie by name
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return null;
+    }
+
+    // Function to display the session_id on the page
+    function displaySessionId() {
+        const displayEl = document.getElementById('session-display');
+        const sessionId = getCookie('session_id');
+
+        if (sessionId) {
+            displayEl.textContent = sessionId;
+        } else {
+            displayEl.textContent = "No session_id cookie found.";
+            displayEl.style.color = "#8c959f";
+        }
+    }
+
+    // Run on page load
+    window.onload = displaySessionId;
+</script>
+
+</body>
+</html>

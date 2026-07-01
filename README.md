@@ -268,6 +268,15 @@ Modify the configuration file to match your website's root path.
 
 If no file is provided, the server loads `config/default.conf`.
 
+To stop the server, you should do :
+> echo "stop" | nc -uU  /tmp/close_webserver.sock
+
+Tests are located in the directory test:
+> ./tests/mass_test_siege.sh
+> ./tests/curl_upload.sh
+> ./tests/test_bad_conf.sh
+And so on ...
+
 You can also use the following commands:
 > make clean # clean the project
 > make fclean # clean and delete the executable

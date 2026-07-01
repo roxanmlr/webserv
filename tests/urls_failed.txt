@@ -1,0 +1,6 @@
+127.0.0.1:8080/cgi-bin/hello_p.py
+127.0.0.1:8080/cgi-bin/sleep.py
+0.0.0.0:8080/cgi-bin/hello_p.py
+0.0.0.0:8080/cgi-bin/sleep.py
+0.0.0.0:8081/cgi-bin/hello_p.py
+0.0.0.0:8081/cgi-bin/sleep.py

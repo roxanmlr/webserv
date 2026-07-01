@@ -361,8 +361,8 @@ bool Client::onCgiOutput() {
 }
 
 static bool hasCookieSessionId(HttpRequest const& request) {
-	if (!request.hasHeader("Cookie"))
-		return false;
+	/*if (!request.hasHeader("Cookie"))
+		return false;*/
 	const std::string&	   cookieHeader = request.getHeader("Cookie");
 	std::string::size_type pos			= 0;
 	while (pos < cookieHeader.size()) {
@@ -387,14 +387,15 @@ static bool hasCookieSessionId(HttpRequest const& request) {
 static std::string generateSessionId(int fd) {
 	static unsigned long counter = 0;
 	std::ostringstream	 oss;
-	oss << (unsigned long)(time(NULL) * counter) << (unsigned int)(fd * counter);
+	oss << counter << (unsigned long)(time(NULL)) << (unsigned int)(fd) << counter;
+	counter++;
 	return oss.str();
 }
 
 void Client::ensureSessionId() {
 	if (hasCookieSessionId(_request))
 		return;
-	response.setHeader("Set-Cookie", "session_id=" + generateSessionId(fd) + "; HttpOnly; Path=/");
+	response.setHeader("Set-Cookie", "session_id=" + generateSessionId(fd) + "; path=/; max-age=86400; SameSite=Strict; Secure");
 }
 
 bool Client::isCgiFinished() {
